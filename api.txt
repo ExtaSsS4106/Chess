@@ -1,0 +1,14 @@
+
+# Регистрация пользователя
+
+POST /api/register/
+Content-Type: application/json
+
+{
+    "username": "john",
+    "password": "StrongPass123!",
+    "password2": "StrongPass123!",
+    "email": "john@example.com",
+    "first_name": "John",
+    "last_name": "Doe"
+}
