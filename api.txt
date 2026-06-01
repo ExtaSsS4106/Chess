@@ -24,13 +24,13 @@ Headers: Authorization: Bearer <access_token>
 
 # Вывести всех друзей
 
-GET /mobile_api/app_functional/firends/get/
+GET /mobile_api/app_functional/friends/get/
 Headers: Authorization: Bearer <access_token>
 
 
 # Добавить в друзья
 
-POST /mobile_api/app_functional/firends/add/
+POST /mobile_api/app_functional/friends/add/
 Headers: Authorization: Bearer <access_token>
 
 {
@@ -40,7 +40,7 @@ Headers: Authorization: Bearer <access_token>
 
 # Удалить из друзей
 
-POST /mobile_api/app_functional/firends/delete/
+POST /mobile_api/app_functional/friends/delete/
 Headers: Authorization: Bearer <access_token>
 
 {
@@ -49,11 +49,11 @@ Headers: Authorization: Bearer <access_token>
 
 # Отправить запрос в друзья
 
-POST /mobile_api/app_functional/firends/send_invite/
+POST /mobile_api/app_functional/friends/send_invite/
 Headers: Authorization: Bearer <access_token>
 
 {
-    "fun": 1
+    "fun": user
 }
 
 

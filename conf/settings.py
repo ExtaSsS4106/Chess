@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'rest_framework',           # DRF
     'rest_framework.authtoken',
     'rest_framework_simplejwt', # JWT
+    'rest_framework_simplejwt.token_blacklist', # чёрный список JWT
+    
 ]
 
 # Настройки DRF

@@ -12,7 +12,7 @@ urlpatterns = [
     path('login', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # friends
-    path('firends/get', Get_friends.as_view(), name='get_friends'),
+    path('friends/get', Get_friends.as_view(), name='get_friends'),
     path('friends/add', Add_friend.as_view(), name='add_friend'),
     path('friends/delete', Delete_from_friends.as_view(), name='delete_friend'),
     path('friends/send_invite', send_invite_to_friend.as_view(), name='send_invite'),

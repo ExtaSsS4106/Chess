@@ -30,7 +30,18 @@ class Add_friend(APIView):
     def post(self, request):
         user = request.user
         fid = request.data.get('fid')
+        rid = request.data.get('rid')
         
+        if rid:
+            if Requests.objects.filter(id=rid, user_to=user, status='canceld').exists():
+                return Response({"error": "request already canceld"}, status=status.HTTP_400_BAD_REQUEST)
+            if Requests.objects.filter(id=rid, user_to=user, status='aprooved').exists():
+                return Response({"error": "request already aprooved"}, status=status.HTTP_400_BAD_REQUEST)
+            if Requests.objects.filter(id=rid, user_to=user, status='sended').exists():
+                req = get_object_or_404(Requests, id=rid, user_to = user)
+                req.status = 'aprooved'
+                req.save()
+            
         if not fid:
             return Response({"error": "fid required"}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -62,12 +73,17 @@ class Delete_from_friends(APIView):
         friend = get_object_or_404(User, id=fid)
         
         Friends.objects.filter(Q(user_1 = user, user_2 = friend) | Q(user_2 = user, user_1 = friend)).delete()
+        
+        return Response({"status": "friend deleted"}, status=status.HTTP_200_OK)
 # отправить запрос в друзья
 class send_invite_to_friend(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def post(self, request):
         user = request.user
         fun = request.data.get('fun')
+        
+        if Requests.objects.filter(user_from=user, user_to__username=fun, status='sended').exists():
+            return Response({"error": "request already sended"}, status=status.HTTP_400_BAD_REQUEST)
         
         if not fun:
             return Response({"error": "fun required"}, status=status.HTTP_400_BAD_REQUEST)
