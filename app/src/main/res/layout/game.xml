@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.motion.widget.MotionLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#2A2A2A"
+    app:layoutDescription="@xml/registr_scene"
+    tools:context=".MainActivity">
+
+    <!-- Header (верхняя панель) -->
+    <View
+        android:id="@+id/header_g"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:background="#5F5959"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Кнопка с белым флагом, расположена в хедере справа -->
+
+    <!-- Карточка второго игрока -->
+
+    <ImageButton
+        android:id="@+id/flagButton"
+        android:layout_width="35dp"
+        android:layout_height="34dp"
+        android:layout_marginStart="20dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/flag_desc"
+        android:scaleType="centerInside"
+        app:layout_constraintBottom_toBottomOf="@+id/header_g"
+        app:layout_constraintStart_toStartOf="@+id/header_g"
+        app:layout_constraintTop_toTopOf="@+id/header_g"
+        app:layout_constraintVertical_bias="0.615"
+        app:srcCompat="@drawable/white_flag" />
+
+    <View
+        android:id="@+id/p2_g"
+        android:layout_width="380dp"
+        android:layout_height="70dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/game_red_card"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/header_g" />
+
+    <TextView
+        android:id="@+id/name_p2_g"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
+        android:text="Player#2"
+        android:textColor="#F6F6F6"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toBottomOf="@+id/p2_g"
+        app:layout_constraintEnd_toEndOf="@+id/p2_g"
+        app:layout_constraintTop_toTopOf="@+id/p2_g" />
+
+    <TextView
+        android:id="@+id/timer_p2_g"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:text="01:30"
+        android:textColor="#F6F6F6"
+        android:textSize="34sp"
+        app:layout_constraintBottom_toBottomOf="@+id/p2_g"
+        app:layout_constraintStart_toStartOf="@+id/p2_g"
+        app:layout_constraintTop_toTopOf="@+id/p2_g" />
+
+    <!-- Шахматная доска -->
+    <ImageView
+        android:id="@+id/imageView3"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="16dp"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toTopOf="@+id/p1_g"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/p2_g"
+        app:srcCompat="@drawable/desck" />
+
+    <!-- Карточка первого игрока -->
+    <View
+        android:id="@+id/p1_g"
+        android:layout_width="380dp"
+        android:layout_height="69dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/game_green_card"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/name_p1_g"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
+        android:text="Player#1"
+        android:textColor="#F6F6F6"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toBottomOf="@+id/p1_g"
+        app:layout_constraintEnd_toEndOf="@+id/p1_g"
+        app:layout_constraintTop_toTopOf="@+id/p1_g" />
+
+    <TextView
+        android:id="@+id/timer_p1_g"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:text="01:30"
+        android:textColor="#F6F6F6"
+        android:textSize="34sp"
+        app:layout_constraintBottom_toBottomOf="@+id/p1_g"
+        app:layout_constraintStart_toStartOf="@+id/p1_g"
+        app:layout_constraintTop_toTopOf="@+id/p1_g" />
+
+</androidx.constraintlayout.motion.widget.MotionLayout>
