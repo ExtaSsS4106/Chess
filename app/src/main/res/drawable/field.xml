@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Состояние "нажато" или "в фокусе" -->
+    <item android:state_focused="true">
+        <shape>
+            <solid android:color="#D3C9C9" />   <!-- чуть темнее при фокусе -->
+            <corners android:radius="20dp" />
+            <stroke android:width="2dp" android:color="#8EEF44" /> <!-- зелёная обводка -->
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape>
+            <solid android:color="#D3C9C9" />
+            <corners android:radius="20dp" />
+            <stroke android:width="2dp" android:color="#8EEF44" />
+        </shape>
+    </item>
+    <!-- Обычное состояние -->
+    <item>
+        <shape>
+            <solid android:color="#EAE1E1" />
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+</selector>

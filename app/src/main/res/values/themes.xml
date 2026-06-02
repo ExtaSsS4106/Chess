@@ -1,0 +1,10 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Chess" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <item name="colorPrimary">#2A2A2A</item>
+        <item name="colorAccent">#EAE1E1</item>
+    </style>
+
+    <style name="Theme.Chess" parent="Base.Theme.Chess" />
+</resources>
