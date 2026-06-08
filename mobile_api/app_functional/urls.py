@@ -1,6 +1,6 @@
 from django.conf.urls.static import static
 from django.urls import path
-from .views.auth import RegisterView, LogoutView
+from .views.auth import RegisterView, LogoutView, LoginView
 from .views.friends import Get_friends, Add_friend, Delete_from_friends, send_invite_to_friend
 from .views.requests import Get_requests, Cancel_request, Aproove_request
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -9,7 +9,7 @@ urlpatterns = [
     # auth
     path('register', RegisterView.as_view(), name='register'),
     path('logout', LogoutView.as_view(), name='logout'),
-    path('login', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('login', LoginView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # friends
     path('friends/get', Get_friends.as_view(), name='get_friends'),
