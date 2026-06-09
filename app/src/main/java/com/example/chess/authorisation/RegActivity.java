@@ -39,7 +39,7 @@ public class RegActivity extends AppCompatActivity {
 
 
 
-        Register register = new Register(RegActivity.this);
+        register = new Register(RegActivity.this);
         registerButton.setOnClickListener(v -> attemptRegistration());
 
         login.setOnClickListener(new View.OnClickListener() {
