@@ -72,6 +72,8 @@ public class LoginActivity extends AppCompatActivity {
                             Toast.makeText(LoginActivity.this,
                                     "Ошибка входа, проверьте имя или пароль",
                                     Toast.LENGTH_SHORT).show();
+                            login_username.setText("");
+                            login_password.setText("");
                         }
                     });
 
