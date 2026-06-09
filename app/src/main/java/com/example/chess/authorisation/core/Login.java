@@ -19,14 +19,26 @@ public class Login {
     private endPoints endpoints;
     private Context context;
     private String USER_DATA = "user_data.json";
-    public Login(View.OnClickListener context) {
-        this.context = (Context) context;
-        this.requests = new Requests((Context) context);
+    public Login(Context context) {
+        this.context = context;
+        this.requests = new Requests(context);
         this.endpoints = new endPoints();
         this.path = endpoints.getLOGINPath();
     }
 
+    public void logout() {
+        try{
+            boolean deleted = context.deleteFile(USER_DATA);
+            if (deleted) {
+                Log.d("Login", "Пользователь вышел из системы, данные удалены");
+            } else {
+                Log.w("Login", "Файл данных не найден");
+            }
 
+        }catch (Exception e){
+            Log.e("Login", "Ошибка при выходе: " + e.getMessage());
+        }
+    }
     public String perfomLogin (String username, String password){
         try {
             JSONObject loginData = new JSONObject();
@@ -82,6 +94,8 @@ public class Login {
         }
 
         return username;
+
+
     }
 
 }

@@ -2,7 +2,7 @@ package com.example.chess.api;
 
 public class endPoints {
 
-    private String URL = "";
+    private String URL = "http://192.168.31.229:8000";
     private String LOGIN = "/mobile_api/app_functional/login";
     private String REGISTER = "/mobile_api/app_functional/register";
 

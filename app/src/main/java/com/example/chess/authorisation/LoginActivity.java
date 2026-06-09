@@ -4,6 +4,7 @@ package com.example.chess.authorisation;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -38,7 +39,7 @@ public class LoginActivity extends AppCompatActivity {
                     String username = String.valueOf(login_username.getText());
                     String password = String.valueOf(login_password.getText());
 
-                    Login login = new Login(this);
+                    Login login = new Login(LoginActivity.this);
                     login.perfomLogin(username, password);
 
                     // Переходим на главный экран
@@ -47,6 +48,7 @@ public class LoginActivity extends AppCompatActivity {
                     startActivity(intent);
                     finish();
                 }catch (Exception e){
+                    Log.d("Error ", String.valueOf(e));
                     loginBtn.setEnabled(true);
                     loginBtn.setText("Войти");
                 }
