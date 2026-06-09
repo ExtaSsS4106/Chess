@@ -41,14 +41,15 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 try{
-                    loginBtn.setEnabled(false);
-                    loginBtn.setText("Вход...");
+
 
                     String username = String.valueOf(login_username.getText());
                     String password = String.valueOf(login_password.getText());
                     if (!validateFields(username, password)){
                         return;
                     }
+                    loginBtn.setEnabled(false);
+                    loginBtn.setText("Вход...");
                     Login login = new Login(LoginActivity.this);
                     login.perfomLogin(username, password, new Requests.ApiCallback() {
                         @Override
