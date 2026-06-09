@@ -4,7 +4,9 @@ package com.example.chess.authorisation;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,6 +21,9 @@ import com.example.chess.MainActivity;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private EditText login_username;
+    private EditText login_password;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,10 +33,11 @@ public class LoginActivity extends AppCompatActivity {
         Button loginBtn = findViewById(R.id.btn_login);
 
 
-        EditText login_username = findViewById(R.id.login_username);
-        EditText login_password = findViewById(R.id.login_password);
+        login_username = findViewById(R.id.login_username);
+        login_password = findViewById(R.id.login_password);
 
         loginBtn.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View view) {
                 try{
@@ -82,5 +88,22 @@ public class LoginActivity extends AppCompatActivity {
                 finish();
             }
         });
+
+    }
+
+    private boolean validateFields(String username, String password) {
+        if (TextUtils.isEmpty(username)) {
+            login_username.setError("Введите имя пользователя");
+            login_username.requestFocus();
+            return false;
+        }
+
+        if (TextUtils.isEmpty(password)) {
+            login_password.setError("Введите пароль");
+            login_password.requestFocus();
+            return false;
+        }
+
+        return true;
     }
 }
