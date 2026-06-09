@@ -46,7 +46,9 @@ public class LoginActivity extends AppCompatActivity {
 
                     String username = String.valueOf(login_username.getText());
                     String password = String.valueOf(login_password.getText());
-
+                    if (!validateFields(username, password)){
+                        return;
+                    }
                     Login login = new Login(LoginActivity.this);
                     login.perfomLogin(username, password, new Requests.ApiCallback() {
                         @Override
