@@ -39,7 +39,7 @@ public class Login {
             Log.e("Login", "Ошибка при выходе: " + e.getMessage());
         }
     }
-    public String perfomLogin (String username, String password){
+    public void perfomLogin (String username, String password, Requests.ApiCallback callback){
         try {
             JSONObject loginData = new JSONObject();
             loginData.put("username", username);
@@ -73,29 +73,29 @@ public class Login {
                             fos.write(json.toString().getBytes());
                             fos.close();
                             Log.d("Storage", "Данные пользователя сохранены");
+
+                            callback.onSuccess(response);
                         }catch (Exception e){
                             Log.e("Storage", "Ошибка сохранения", e);
+                            callback.onError("Ошибка сохранения данных");
                         }
 
 
 
                     } catch (JSONException e) {
-                        throw new RuntimeException(e);
+                        callback.onError("Ошибка парсинга ответа");
                     }
                 }
                 @Override
                 public void onError(String error) {
                     Log.e("Login", "Ошибка авторизации: " + error);
-
+                    callback.onError(error);
                 }
             });
         } catch (Exception e) {
-            Log.e("Storage", "Ошибка сохранения", e);
+            Log.e("Storage", "Ошибка выполнения запроса", e);
+            callback.onError(e.getMessage());
         }
-
-        return username;
-
-
     }
 
 }

@@ -11,6 +11,7 @@ import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.chess.R;
+import com.example.chess.api.Requests;
 import com.example.chess.authorisation.core.Login;
 
 import com.example.chess.MainActivity;
@@ -40,13 +41,24 @@ public class LoginActivity extends AppCompatActivity {
                     String password = String.valueOf(login_password.getText());
 
                     Login login = new Login(LoginActivity.this);
-                    login.perfomLogin(username, password);
+                    login.perfomLogin(username, password, new Requests.ApiCallback() {
+                        @Override
+                        public void onSuccess(String response) {
+                            // Переходим на главный экран только после успешного входа
+                            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            startActivity(intent);
+                            finish();
+                        }
 
-                    // Переходим на главный экран
-                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
+                        @Override
+                        public void onError(String error) {
+                            loginBtn.setEnabled(true);
+                            loginBtn.setText("Войти");
+                            Log.d("Login Error", error);
+                        }
+                    });
+
                 }catch (Exception e){
                     Log.d("Error ", String.valueOf(e));
                     loginBtn.setEnabled(true);
