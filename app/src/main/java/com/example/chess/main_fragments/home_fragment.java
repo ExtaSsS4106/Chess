@@ -27,7 +27,9 @@ public class home_fragment extends Fragment {
         startB = view.findViewById(R.id.start_home);
         startWFB = view.findViewById(R.id.start2_home);
         logOut = view.findViewById(R.id.logout_home);
+
         login = new Login(requireContext());
+
         startB.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
