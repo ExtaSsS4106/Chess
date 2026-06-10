@@ -2,11 +2,13 @@ package com.example.chess.main_fragments.core;
 
 import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.chess.api.Requests;
 import com.example.chess.api.endPoints;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -61,7 +63,7 @@ public class friends {
             @Override
             public void onError(String error) {
                 if (callback != null) {
-                    callback.onError("Ошибка добавления друга: " + error);
+                    callback.onError("ERROR getFriends: " + error);
                 }
             }
         });
@@ -78,45 +80,102 @@ public class friends {
     }
 
 
-    public void addFriend(){
+    public void addFriend(Integer RID, AddFriendCallback callback) throws JSONException {
         JSONObject data = new JSONObject();
+        data.put("rid", RID);
         requests.metaPOST(add, data, new Requests.ApiCallback() {
             @Override
             public void onSuccess(String response) {
-
+                JSONObject jsonResponse = null;
+                try {
+                    jsonResponse = new JSONObject(response);
+                    if (jsonResponse.has("status") && jsonResponse.getString("status").equals("ok")) {
+                        Toast.makeText(context, "Успешно", Toast.LENGTH_SHORT).show();
+                        Log.d("Response", "Code: " + jsonResponse.getString("code"));
+                    } else if (jsonResponse.has("status") && jsonResponse.getString("status").equals("error")) {
+                        Toast.makeText(context, "Ошибка" + jsonResponse.getString("code"), Toast.LENGTH_SHORT).show();
+                        Log.d("Response", "Code: " + jsonResponse.getString("code"));
+                    } else {
+                        Toast.makeText(context, "Ошибка ответа", Toast.LENGTH_SHORT).show();
+                        Log.d("Response", "Code: " + jsonResponse.getString("code"));
+                    }
+                }catch (Exception e){
+                    Log.e("Response", "Critical error: " + e.getMessage(), e);
+                    Toast.makeText(context, "Критическая ошибка: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onError(String error) {
-
+                if (callback != null) {
+                    callback.onError("ERROR addFriend: " + error);
+                }
             }
         });
     }
-    public void deleteFriend(){
+    public void deleteFriend(Integer FID, DeleteFriendCallback callback) throws JSONException {
         JSONObject data = new JSONObject();
+        data.put("fid", FID);
         requests.metaPOST(delete, data, new Requests.ApiCallback() {
             @Override
             public void onSuccess(String response) {
-
+                JSONObject jsonResponse = null;
+                try {
+                    jsonResponse = new JSONObject(response);
+                    if (jsonResponse.has("status") && jsonResponse.getString("status").equals("ok")) {
+                        Toast.makeText(context, "Успешно", Toast.LENGTH_SHORT).show();
+                        Log.d("Response", "Code: " + jsonResponse.getString("code"));
+                    } else if (jsonResponse.has("status") && jsonResponse.getString("status").equals("error")) {
+                        Toast.makeText(context, "Ошибка" + jsonResponse.getString("code"), Toast.LENGTH_SHORT).show();
+                        Log.d("Response", "Code: " + jsonResponse.getString("code"));
+                    } else {
+                        Toast.makeText(context, "Ошибка ответа", Toast.LENGTH_SHORT).show();
+                        Log.d("Response", "Code: " + jsonResponse.getString("code"));
+                    }
+                }catch (Exception e){
+                    Log.e("Response", "Critical error: " + e.getMessage(), e);
+                    Toast.makeText(context, "Критическая ошибка: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onError(String error) {
-
+                if (callback != null) {
+                    callback.onError("ERROR deleteFriend: " + error);
+                }
             }
         });
     }
-    public void sendInvite(){
+    public void sendInvite(String userName, SendInviteCallback callback) throws JSONException {
         JSONObject data = new JSONObject();
+        data.put("fun", userName);
         requests.metaPOST(send, data, new Requests.ApiCallback() {
             @Override
             public void onSuccess(String response) {
-
+                JSONObject jsonResponse = null;
+                try {
+                    jsonResponse = new JSONObject(response);
+                    if (jsonResponse.has("status") && jsonResponse.getString("status").equals("ok")) {
+                        Toast.makeText(context, "Успешно", Toast.LENGTH_SHORT).show();
+                        Log.d("Response", "Code: " + jsonResponse.getString("code"));
+                    } else if (jsonResponse.has("status") && jsonResponse.getString("status").equals("error")) {
+                        Toast.makeText(context, "Ошибка" + jsonResponse.getString("code"), Toast.LENGTH_SHORT).show();
+                        Log.d("Response", "Code: " + jsonResponse.getString("code"));
+                    } else {
+                        Toast.makeText(context, "Ошибка ответа", Toast.LENGTH_SHORT).show();
+                        Log.d("Response", "Code: " + jsonResponse.getString("code"));
+                    }
+                }catch (Exception e){
+                    Log.e("Response", "Critical error: " + e.getMessage(), e);
+                    Toast.makeText(context, "Критическая ошибка: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onError(String error) {
-
+                if (callback != null) {
+                    callback.onError("ERROR deleteFriend: " + error);
+                }
             }
         });
     }
