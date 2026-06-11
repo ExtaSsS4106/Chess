@@ -43,8 +43,7 @@ public class friends_fragment extends Fragment {
         recyclerViewFriends.setAdapter(adapter);
         // Устанавливаем listener для обновления после удаления
         adapter.setOnFriendDeletedListener((position, friend) -> {
-            // Просто обновляем список (он уже обновлен в адаптере)
-            // Можно добавить дополнительную логику, например, обновить счетчик друзей
+            loadFriendsFromServer();
             Toast.makeText(getContext(), "Друг удален: " + friend.getName(), Toast.LENGTH_SHORT).show();
         });
         loadFriendsFromServer();
