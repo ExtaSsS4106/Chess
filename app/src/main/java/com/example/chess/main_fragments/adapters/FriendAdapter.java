@@ -16,11 +16,13 @@ import com.example.chess.R;
 import com.example.chess.main_fragments.core.FriendsCore;
 import com.example.chess.main_fragments.objects.Friend;
 
+import org.json.JSONException;
+
 import java.util.List;
 
 // Адаптер для Friend объектов
 public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder> {
-    private List<Friend> friends;  // Теперь список Friend, а не String
+    private List<Friend> friends;
     private Context context;
     private FriendsCore friendsCore;
     public FriendAdapter(List<Friend> friends, Context context) {
@@ -46,8 +48,22 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
 
         // Кнопка удаления
         holder.deleteBtn.setOnClickListener(v -> {
-            friends.remove(position);
-            notifyItemRemoved(position);
+            try {
+                friendsCore.deleteFriend(friendId, new FriendsCore.DeleteFriendCallback() {
+                    @Override
+                    public void onSuccess(String message) {
+                        friends.remove(position);
+                        notifyDataSetChanged();
+                    }
+
+                    @Override
+                    public void onError(String error) {
+
+                    }
+                });
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
 
