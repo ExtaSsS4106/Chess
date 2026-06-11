@@ -7,14 +7,14 @@ public class endPoints {
     private String LOGIN = "/mobile_api/app_functional/login";
     private String REGISTER = "/mobile_api/app_functional/register";
     //friends
-    private String GET_FRIENDS = "/mobile_api/app_functional/friends/get/";
-    private String ADD_FRIEND = "/mobile_api/app_functional/friends/add/";
-    private String DELETE_FRIEND = "/mobile_api/app_functional/friends/delete/";
-    private String SEND_IVITE = "/mobile_api/app_functional/friends/send_invite/";
+    private String GET_FRIENDS = "/mobile_api/app_functional/friends/get";
+    private String ADD_FRIEND = "/mobile_api/app_functional/friends/add";
+    private String DELETE_FRIEND = "/mobile_api/app_functional/friends/delete";
+    private String SEND_IVITE = "/mobile_api/app_functional/friends/send_invite";
     //requests
-    private String GET_REQUESTS = "/mobile_api/app_functional/requests/get/";
-    private String CANCEL_REQUEST = "/mobile_api/app_functional/requests/cancel/";
-    private String APROOVE_REQUEST = "/mobile_api/app_functional/requests/aproove/";
+    private String GET_REQUESTS = "/mobile_api/app_functional/requests/get";
+    private String CANCEL_REQUEST = "/mobile_api/app_functional/requests/cancel";
+    private String APROOVE_REQUEST = "/mobile_api/app_functional/requests/aproove";
 
     //url
     public void setURL(String url){
