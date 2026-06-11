@@ -34,7 +34,7 @@ POST /mobile_api/app_functional/friends/add/
 Headers: Authorization: Bearer <access_token>
 
 {
-    "fid": 1
+    "rid": 1
 }
 
 

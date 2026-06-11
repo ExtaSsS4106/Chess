@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from mobile_api.models import Friends, Requests
 from django.db.models import Q
 
+from mobile_api.app_functional.status_codes import StatusCodes
 # Create your views here.
 class Get_friends(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -22,41 +23,38 @@ class Get_friends(APIView):
                 "id": friend.id,
                 "name": friend.username,
             })
-        return Response(response, status=status.HTTP_200_OK)
-    
+        return Response({ "friends": response }, status=status.HTTP_200_OK)
 # добавить в друзья   
 class Add_friend(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     def post(self, request):
         user = request.user
-        fid = request.data.get('fid')
         rid = request.data.get('rid')
         
         if rid:
             if Requests.objects.filter(id=rid, user_to=user, status='canceld').exists():
-                return Response({"error": "request already canceld"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(StatusCodes.REQUEST_ALREADY_CANCELED, status=status.HTTP_400_BAD_REQUEST)
             if Requests.objects.filter(id=rid, user_to=user, status='aprooved').exists():
-                return Response({"error": "request already aprooved"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(StatusCodes.REQUEST_ALREADY_APPROVED, status=status.HTTP_400_BAD_REQUEST)
             if Requests.objects.filter(id=rid, user_to=user, status='sended').exists():
                 req = get_object_or_404(Requests, id=rid, user_to = user)
                 req.status = 'aprooved'
                 req.save()
+            else:
+                return Response(StatusCodes.REQUEST_ALREADY_SENDED, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(StatusCodes.RID_REQUIRED, status=status.HTTP_400_BAD_REQUEST)
             
-        if not fid:
-            return Response({"error": "fid required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if user.id == int(fid):
-            return Response({"error": "Cannot add yourself"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        friend = get_object_or_404(User, id=fid)
+       
+        friend = get_object_or_404(User, id=req.user_from.id)
         
         user_1, user_2 = (user, friend) if user.id < friend.id else (friend, user)
 
         try:
             Friends.objects.create(user_1=user_1, user_2=user_2)
-            return Response({"status": "friend added"}, status=status.HTTP_201_CREATED)
+            return Response(StatusCodes.FRIEND_ADDED, status=status.HTTP_201_CREATED)
         except IntegrityError:
-            return Response({"status": "friendship already exists"}, status=status.HTTP_409_CONFLICT)
+            return Response(StatusCodes.FRIENDSHIP_EXISTS, status=status.HTTP_409_CONFLICT)
         
 class Delete_from_friends(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -65,16 +63,17 @@ class Delete_from_friends(APIView):
         fid = request.data.get('fid')
         
         if not fid:
-            return Response({"error": "fid required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(StatusCodes.FID_REQUIRED, status=status.HTTP_400_BAD_REQUEST)
         
         if user.id == int(fid):
-            return Response({"error": "fid cannot be yourself"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(StatusCodes.FID_CANNOT_BE_YOURSELF, status=status.HTTP_400_BAD_REQUEST)
         
         friend = get_object_or_404(User, id=fid)
-        
-        Friends.objects.filter(Q(user_1 = user, user_2 = friend) | Q(user_2 = user, user_1 = friend)).delete()
-        
-        return Response({"status": "friend deleted"}, status=status.HTTP_200_OK)
+        try:
+            Friends.objects.filter(Q(user_1 = user, user_2 = friend) | Q(user_2 = user, user_1 = friend)).delete()
+        except Friends.DoesNotExist:
+            return Response(StatusCodes.FRIENDSHIP_EXISTS, status=status.HTTP_400_BAD_REQUEST)
+        return Response(StatusCodes.FRIEND_DELETED, status=status.HTTP_200_OK)
 # отправить запрос в друзья
 class send_invite_to_friend(APIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -82,15 +81,21 @@ class send_invite_to_friend(APIView):
         user = request.user
         fun = request.data.get('fun')
         
+        
         if Requests.objects.filter(user_from=user, user_to__username=fun, status='sended').exists():
-            return Response({"error": "request already sended"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(StatusCodes.INVITE_ALREADY_SENDED, status=status.HTTP_400_BAD_REQUEST)
         
         if not fun:
-            return Response({"error": "fun required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(StatusCodes.FUN_REQUIRED, status=status.HTTP_400_BAD_REQUEST)
         
         if user.username == str(fun):
-            return Response({"error": "fun cannot be yourself"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(StatusCodes.FUN_CANNOT_BE_YOURSELF, status=status.HTTP_400_BAD_REQUEST)
         
+        if Friends.objects.filter(Q(user_1=user, user_2__username=fun) | Q(user_2=user, user_1__username=fun)).exists():
+            return Response(StatusCodes.FRIENDSHIP_EXISTS, status=status.HTTP_400_BAD_REQUEST)
+        
+        if Requests.objects.filter(Q(user_from=user, user_to__username=fun) | Q(user_to=user, user_from__username=fun), status='sended').exists():
+            return Response(StatusCodes.INVITE_ALREADY_SENDED, status=status.HTTP_400_BAD_REQUEST)
         friend = get_object_or_404(User, username=fun)
         
         Requests.objects.create(
@@ -100,4 +105,4 @@ class send_invite_to_friend(APIView):
             status = 'sended'
         )
         
-        return Response({"status": "OK"}, status=status.HTTP_201_CREATED)
+        return Response(StatusCodes.INVITE_SENT, status=status.HTTP_201_CREATED)

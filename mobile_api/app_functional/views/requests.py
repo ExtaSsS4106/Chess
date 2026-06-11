@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
+from mobile_api.app_functional.status_codes import StatusCodes
 from mobile_api.models import Requests
 
 class Get_requests(APIView):
@@ -33,13 +34,13 @@ class Cancel_request(APIView):
         rid = request.data.get('rid')
         
         if not rid:
-            return Response({"error": "rid required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(StatusCodes.RID_REQUIRED, status=status.HTTP_400_BAD_REQUEST)
         
         if Requests.objects.filter(id=rid, user_to=user, status='canceld').exists():
-            return Response({"error": "request already canceld"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(StatusCodes.REQUEST_ALREADY_CANCELED, status=status.HTTP_400_BAD_REQUEST)
         
         if Requests.objects.filter(id=rid, user_to=user, status='aprooved').exists():
-            return Response({"error": "request already aprooved"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(StatusCodes.REQUEST_ALREADY_APPROVED, status=status.HTTP_400_BAD_REQUEST)
         
         req = get_object_or_404(Requests, id=rid, user_to = user)
         req.status = 'canceld'
@@ -54,17 +55,16 @@ class Aproove_request(APIView):
         rid = request.data.get('rid')
         
         if not rid:
-            return Response({"error": "rid required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(StatusCodes.RID_REQUIRED, status=status.HTTP_400_BAD_REQUEST)
         
         if Requests.objects.filter(id=rid, user_to=user, status='aprooved').exists():
-            return Response({"error": "request already aprooved"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(StatusCodes.REQUEST_ALREADY_APPROVED, status=status.HTTP_400_BAD_REQUEST)
         
         if Requests.objects.filter(id=rid, user_to=user, status='canceld').exists():
-            return Response({"error": "request already canceld"}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(StatusCodes.REQUEST_ALREADY_CANCELED, status=status.HTTP_400_BAD_REQUEST)
         if Requests.objects.filter(id=rid, user_to=user, type='add_friend').exists():
-            return Response({"error": "request is not of type 'add_friend'"}, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response(StatusCodes.REQUEST_NOT_OF_TYPE_ADD_FRIEND, status=status.HTTP_400_BAD_REQUEST)
+        
         req = get_object_or_404(Requests, id=rid, user_to = user)
         req.status = 'aprooved'
         req.save()
