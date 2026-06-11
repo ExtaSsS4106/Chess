@@ -1,5 +1,7 @@
 package com.example.chess.main_fragments.adapters;
 
+import static androidx.recyclerview.widget.RecyclerView.*;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -40,7 +42,7 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, @SuppressLint("RecyclerView") int position) {
         Friend friend = friends.get(position);  // Получаем объект Friend
         holder.friendName.setText(friend.getName());  // Показываем имя
 
@@ -48,21 +50,32 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
 
         // Кнопка удаления
         holder.deleteBtn.setOnClickListener(v -> {
+            // ✅ НОВЫЙ МЕТОД (не зачёркнут)
+            int currentPosition = holder.getAbsoluteAdapterPosition();
+
+            if (currentPosition == RecyclerView.NO_POSITION) {
+                return;
+            }
+
+            Friend friendToDelete = friends.get(currentPosition);
+
             try {
-                friendsCore.deleteFriend(friendId, new FriendsCore.DeleteFriendCallback() {
+                friendsCore.deleteFriend(friendToDelete.getId(), new FriendsCore.DeleteFriendCallback() {
                     @Override
                     public void onSuccess(String message) {
-                        friends.remove(position);
-                        notifyDataSetChanged();
+                        friends.remove(currentPosition);
+                        notifyItemRemoved(currentPosition);
+                        notifyItemRangeChanged(currentPosition, friends.size() - currentPosition);
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
                     }
 
                     @Override
                     public void onError(String error) {
-
+                        Toast.makeText(context, "Ошибка: " + error, Toast.LENGTH_SHORT).show();
                     }
                 });
             } catch (JSONException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
         });
     }
