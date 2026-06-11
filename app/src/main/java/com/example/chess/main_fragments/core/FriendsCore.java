@@ -29,6 +29,7 @@ public class FriendsCore {
         this.requests = new Requests(context);
         this.endpoints = new endPoints();
 
+        this.get = endpoints.getGET_FRIENDS();
         this.add = endpoints.getADD_FRIEND();
         this.delete = endpoints.getDELETE_FRIEND();
         this.send = endpoints.getSEND_IVITE();
