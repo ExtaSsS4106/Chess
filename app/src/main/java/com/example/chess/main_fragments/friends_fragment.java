@@ -1,8 +1,6 @@
 package com.example.chess.main_fragments;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,14 +37,11 @@ public class friends_fragment extends Fragment {
 
         friendsList = new ArrayList<>();
         friendsManager = new FriendsCore(getContext());
+
+        // АДАПТЕР
         adapter = new FriendAdapter(friendsList, getContext());
         recyclerViewFriends.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter.setOnFriendDeletedListener(() -> {
-            Log.d("ACTION", "reloading");
-            loadFriendsFromServer();
-        });
         recyclerViewFriends.setAdapter(adapter);
-
 
         loadFriendsFromServer();
 
@@ -62,7 +57,6 @@ public class friends_fragment extends Fragment {
         return view;
     }
 
-
     private void loadFriendsFromServer() {
         friendsManager.getFriends(new FriendsCore.FriendsCallback() {
             @Override
@@ -70,20 +64,14 @@ public class friends_fragment extends Fragment {
                 requireActivity().runOnUiThread(() -> {
                     friendsList.clear();
                     friendsList.addAll(friends);
-                    adapter.notifyDataSetChanged();
-
-                    if (friendsList.isEmpty()) {
-                        Toast.makeText(getContext(), "У вас пока нет друзей", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(getContext(), "Загружено друзей: " + friendsList.size(), Toast.LENGTH_SHORT).show();
-                    }
+                    adapter.notifyDataSetChanged();  // ОБНОВЛЯЕМ СПИСОК
                 });
             }
 
             @Override
             public void onError(String error) {
                 requireActivity().runOnUiThread(() -> {
-                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_LONG).show();
+                    Toast.makeText(getContext(), "Ошибка: " + error, Toast.LENGTH_LONG).show();
                 });
             }
         });
@@ -97,7 +85,7 @@ public class friends_fragment extends Fragment {
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
                         textAreaFriends.setText("");
-                        loadFriendsFromServer();
+                        loadFriendsFromServer();  // ПЕРЕЗАГРУЖАЕМ ПОСЛЕ ДОБАВЛЕНИЯ
                     });
                 }
 

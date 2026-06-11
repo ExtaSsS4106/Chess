@@ -1,6 +1,5 @@
 package com.example.chess.main_fragments.adapters;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,22 +23,11 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
     private List<Friend> friends;
     private Context context;
     private FriendsCore friendsCore;
-    private OnFriendDeletedListener deleteListener;  // Добавь интерфейс
-
-    // Интерфейс для callback
-    public interface OnFriendDeletedListener {
-        void onFriendDeleted();
-    }
 
     public FriendAdapter(List<Friend> friends, Context context) {
         this.friends = friends;
         this.context = context;
         this.friendsCore = new FriendsCore(context);
-    }
-
-    // Метод для установки listener
-    public void setOnFriendDeletedListener(OnFriendDeletedListener listener) {
-        this.deleteListener = listener;
     }
 
     @NonNull
@@ -55,18 +43,15 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
         Friend friend = friends.get(position);
         holder.friendName.setText(friend.getName());
 
-        int friendId = friend.getId();
-
         holder.deleteBtn.setOnClickListener(v -> {
             try {
-                friendsCore.deleteFriend(friendId, new FriendsCore.DeleteFriendCallback() {
+                friendsCore.deleteFriend(friend.getId(), new FriendsCore.DeleteFriendCallback() {
                     @Override
                     public void onSuccess(String message) {
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-                        // Вызываем callback
-                        if (deleteListener != null) {
-                            deleteListener.onFriendDeleted();
-                        }
+                        // ВОТ ТУТ ГЛАВНОЕ - просто удаляем из списка
+                        friends.remove(position);
+                        notifyItemRemoved(position);
                     }
 
                     @Override
