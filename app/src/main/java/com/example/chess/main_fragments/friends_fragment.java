@@ -40,6 +40,9 @@ public class friends_fragment extends Fragment {
         friendsManager = new FriendsCore(getContext());
         adapter = new FriendAdapter(friendsList, getContext());
         recyclerViewFriends.setLayoutManager(new LinearLayoutManager(getContext()));
+        adapter.setOnFriendDeletedListener(() -> {
+            loadFriendsFromServer();
+        });
         recyclerViewFriends.setAdapter(adapter);
 
 
@@ -56,6 +59,7 @@ public class friends_fragment extends Fragment {
 
         return view;
     }
+
 
     private void loadFriendsFromServer() {
         friendsManager.getFriends(new FriendsCore.FriendsCallback() {

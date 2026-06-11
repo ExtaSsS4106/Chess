@@ -1,7 +1,5 @@
 package com.example.chess.main_fragments.adapters;
 
-import static androidx.recyclerview.widget.RecyclerView.*;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -22,15 +20,26 @@ import org.json.JSONException;
 
 import java.util.List;
 
-// Адаптер для Friend объектов
 public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder> {
     private List<Friend> friends;
     private Context context;
     private FriendsCore friendsCore;
+    private OnFriendDeletedListener deleteListener;  // Добавь интерфейс
+
+    // Интерфейс для callback
+    public interface OnFriendDeletedListener {
+        void onFriendDeleted();
+    }
+
     public FriendAdapter(List<Friend> friends, Context context) {
         this.friends = friends;
         this.context = context;
         this.friendsCore = new FriendsCore(context);
+    }
+
+    // Метод для установки listener
+    public void setOnFriendDeletedListener(OnFriendDeletedListener listener) {
+        this.deleteListener = listener;
     }
 
     @NonNull
@@ -53,12 +62,10 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
                 friendsCore.deleteFriend(friendId, new FriendsCore.DeleteFriendCallback() {
                     @Override
                     public void onSuccess(String message) {
-                        int pos = holder.getAdapterPosition();
-                        if (pos != RecyclerView.NO_POSITION && pos < friends.size()) {
-                            friends.remove(pos);
-                            notifyItemRemoved(pos);
-                            notifyItemRangeChanged(pos, friends.size());
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+                        // Вызываем callback
+                        if (deleteListener != null) {
+                            deleteListener.onFriendDeleted();
                         }
                     }
 
