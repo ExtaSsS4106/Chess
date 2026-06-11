@@ -38,7 +38,7 @@ public class RequestsCore {
                     JSONObject jsonResponse = null;
                     try {
                         jsonResponse = new JSONObject(response);
-                        JSONArray reqArray = jsonResponse.getJSONArray("friends");
+                        JSONArray reqArray = jsonResponse.getJSONArray("data");
 
                         List<RequestOb> reqList = new ArrayList<>();
                         for (int i = 0; i < reqArray.length(); i++){
