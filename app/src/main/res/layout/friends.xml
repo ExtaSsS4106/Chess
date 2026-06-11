@@ -28,7 +28,6 @@
         android:id="@+id/req_btn"
         android:layout_width="72dp"
         android:layout_height="30dp"
-        android:layout_marginTop="4dp"
         android:adjustViewBounds="true"
         android:background="@drawable/green_send_req_btn"
         android:clickable="true"
@@ -39,7 +38,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@+id/textAreaFriends"
-        app:layout_constraintTop_toTopOf="parent" />
+        tools:layout_editor_absoluteY="4dp" />
 
     <View
         android:id="@+id/divider"
