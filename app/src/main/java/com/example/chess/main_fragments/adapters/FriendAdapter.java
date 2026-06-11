@@ -50,22 +50,14 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
 
         // Кнопка удаления
         holder.deleteBtn.setOnClickListener(v -> {
-            // ✅ НОВЫЙ МЕТОД (не зачёркнут)
-            int currentPosition = holder.getAbsoluteAdapterPosition();
-
-            if (currentPosition == RecyclerView.NO_POSITION) {
-                return;
-            }
-
-            Friend friendToDelete = friends.get(currentPosition);
 
             try {
-                friendsCore.deleteFriend(friendToDelete.getId(), new FriendsCore.DeleteFriendCallback() {
+                friendsCore.deleteFriend(friendId, new FriendsCore.DeleteFriendCallback() {
                     @Override
                     public void onSuccess(String message) {
-                        friends.remove(currentPosition);
-                        notifyItemRemoved(currentPosition);
-                        notifyItemRangeChanged(currentPosition, friends.size() - currentPosition);
+                        friends.remove(position);
+                        notifyItemRemoved(position);
+                        notifyDataSetChanged();
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
                     }
 
