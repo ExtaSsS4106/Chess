@@ -13,11 +13,13 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class RequestsCore {
     private String get;
     private String cancel;
     private String aproove;
+    private String add_friend;
     private Requests requests;
     private Context context;
     private endPoints endPoints;
@@ -29,6 +31,7 @@ public class RequestsCore {
         this.get = endPoints.getGET_REQUESTS();
         this.cancel = endPoints.getCANCEL_REQUEST();
         this.aproove = endPoints.getAPROOVE_REQUEST();
+        this.add_friend = endPoints.getADD_FRIEND();
     }
     public void GetRequests(RequestsCallback callback){
         try {
@@ -113,12 +116,17 @@ public class RequestsCore {
 
         }
     }
-    public void AprooveRequests(Integer RID, AprooveCallback callback){
+    public void AprooveRequests(Integer RID, String type, AprooveCallback callback){
         try {
             JSONObject data = new JSONObject();
             data.put("rid", RID);
-
-            requests.metaPOST(aproove, data, new Requests.ApiCallback() {
+            String path;
+            if (Objects.equals(type, "add_friend")){
+                path = add_friend;
+            }else{
+                path = aproove;
+            }
+            requests.metaPOST(path, data, new Requests.ApiCallback() {
                 @Override
                 public void onSuccess(String response) {
                     JSONObject jsonResponse = null;

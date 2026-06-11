@@ -42,6 +42,7 @@ public class RequestAdapter  extends RecyclerView.Adapter<RequestAdapter.ViewHol
         holder.friendNameReq.setText(request.getName());
         holder.typeReq.setText(request.getType());
         int RID = request.getId();
+        String type = request.getType();
 
         holder.cancelBtnReq.setOnClickListener(v -> {
             requestsCore.CancelRequests(RID, new RequestsCore.CancelCallback() {
@@ -67,7 +68,7 @@ public class RequestAdapter  extends RecyclerView.Adapter<RequestAdapter.ViewHol
             });
         });
         holder.saccessBtnReq.setOnClickListener(v -> {
-            requestsCore.AprooveRequests(RID, new RequestsCore.AprooveCallback() {
+            requestsCore.AprooveRequests(RID, type, new RequestsCore.AprooveCallback() {
                 @Override
                 public void onSuccess(String message) {
                     // Получаем АКТУАЛЬНУЮ позицию элемента в момент нажатия
