@@ -1,6 +1,7 @@
 package com.example.chess.api;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -120,6 +121,7 @@ public class Requests {
                             loadUser.UserData userData = loaduser.loadUserData(context);
                             String token = userData.getToken();
                             if (token != null) {
+                                Log.d("Error", "Authorization" + "Token " + token);
                                 headers.put("Authorization", "Token " + token);
                             }
                             return headers;
