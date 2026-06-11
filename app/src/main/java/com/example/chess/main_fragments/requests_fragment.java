@@ -8,6 +8,8 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -42,6 +44,7 @@ public class requests_fragment extends Fragment {
         adapter = new RequestAdapter(requestsList, getContext());
         recyclerViewReq.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewReq.setAdapter(adapter);
+        loadRequestsFromServer();
         return view;
     }
     private void loadRequestsFromServer() {
