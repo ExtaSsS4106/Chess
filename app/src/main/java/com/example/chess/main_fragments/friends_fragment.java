@@ -1,5 +1,6 @@
 package com.example.chess.main_fragments;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,6 +44,7 @@ public class friends_fragment extends Fragment {
 
         // Устанавливаем listener
         adapter.setOnFriendDeletedListener(friend -> {
+            loadFriendsFromServer();
             Toast.makeText(getContext(), "Друг удален: " + friend.getName(), Toast.LENGTH_SHORT).show();
         });
 
