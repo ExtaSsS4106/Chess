@@ -91,8 +91,8 @@ public class Requests {
                             loadUser.UserData userData = loaduser.loadUserData(context);
                             String token = userData.getToken();
                             if (token != null) {
-                                Log.e("ERROR", "Authorization " + "Bearer " + token);
-                                headers.put("Authorization", "Bearer " + token);
+                                Log.e("ERROR", "Authorization " + "Token " + token);
+                                headers.put("Authorization", "Token " + token);
                             }
                             return headers;
                         }
@@ -122,8 +122,8 @@ public class Requests {
                             loadUser.UserData userData = loaduser.loadUserData(context);
                             String token = userData.getToken();
                             if (token != null) {
-                                Log.e("ERROR", "Authorization " + "Bearer " + token);
-                                headers.put("Authorization", "Bearer " + token);
+                                Log.e("ERROR", "Authorization " + "Token " + token);
+                                headers.put("Authorization", "Token " + token);
                             }
                             return headers;
                         }
