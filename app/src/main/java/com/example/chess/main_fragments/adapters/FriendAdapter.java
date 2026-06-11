@@ -42,23 +42,24 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, @SuppressLint("RecyclerView") int position) {
-        Friend friend = friends.get(position);  // Получаем объект Friend
-        holder.friendName.setText(friend.getName());  // Показываем имя
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        Friend friend = friends.get(position);
+        holder.friendName.setText(friend.getName());
 
         int friendId = friend.getId();
 
-        // Кнопка удаления
         holder.deleteBtn.setOnClickListener(v -> {
-
             try {
                 friendsCore.deleteFriend(friendId, new FriendsCore.DeleteFriendCallback() {
                     @Override
                     public void onSuccess(String message) {
-                        friends.remove(position);
-                        notifyItemRemoved(position);
-                        notifyDataSetChanged();
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+                        int pos = holder.getAdapterPosition();
+                        if (pos != RecyclerView.NO_POSITION && pos < friends.size()) {
+                            friends.remove(pos);
+                            notifyItemRemoved(pos);
+                            notifyItemRangeChanged(pos, friends.size());
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+                        }
                     }
 
                     @Override
