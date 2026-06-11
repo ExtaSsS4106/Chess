@@ -1,15 +1,19 @@
 package com.example.chess.main_fragments.adapters;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.chess.R;
+import com.example.chess.main_fragments.core.FriendsCore;
 import com.example.chess.main_fragments.objects.Friend;
 
 import java.util.List;
@@ -18,8 +22,13 @@ import java.util.List;
 public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder> {
     private List<Friend> friends;  // Теперь список Friend, а не String
 
-    public FriendAdapter(List<Friend> friends) {
+    private FriendsCore friendsCore;
+    private Context context;
+
+    public FriendAdapter(List<Friend> friends, Context context) {
         this.friends = friends;
+        this.friendsCore = new FriendsCore(context);
+        this.context = context;
     }
 
     @NonNull
@@ -31,7 +40,7 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, @SuppressLint("RecyclerView") int position) {
         Friend friend = friends.get(position);  // Получаем объект Friend
         holder.friendName.setText(friend.getName());  // Показываем имя
 
@@ -40,8 +49,24 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
 
         // Кнопка удаления
         holder.deleteBtn.setOnClickListener(v -> {
-            friends.remove(position);
-            notifyItemRemoved(position);
+            try {
+                friendsCore.deleteFriend(friend.getId(), new FriendsCore.DeleteFriendCallback() {
+                    @Override
+                    public void onSuccess(String message) {
+                        // Удаляем из списка и обновляем адаптер
+                        friends.remove(position);
+                        notifyItemRemoved(position);
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        Toast.makeText(context, "Ошибка: " + error, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } catch (Exception e) {
+                Toast.makeText(context, "Ошибка: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
