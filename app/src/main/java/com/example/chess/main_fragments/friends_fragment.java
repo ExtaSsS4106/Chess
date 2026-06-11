@@ -64,6 +64,7 @@ public class friends_fragment extends Fragment {
                 requireActivity().runOnUiThread(() -> {
                     friendsList.clear();
                     friendsList.addAll(friends);
+                    adapter.notifyDataSetChanged();
 
                     if (friendsList.isEmpty()) {
                         Toast.makeText(getContext(), "У вас пока нет друзей", Toast.LENGTH_SHORT).show();

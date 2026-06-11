@@ -38,6 +38,7 @@ public class FriendsCore {
         requests.metaGET(get, new Requests.ApiCallback() {
             @Override
             public void onSuccess(String response) {
+                Log.d("FriendsCore", "Response: " + response);
                 JSONObject jsonResponse = null;
                 try {
                     jsonResponse = new JSONObject(response);
@@ -46,7 +47,12 @@ public class FriendsCore {
                     List<Friend> friendsList = new ArrayList<>();
                     for (int i = 0; i < friendsArray.length(); i++){
                         JSONObject friendObj = friendsArray.getJSONObject(i);
-                        Friend friend = new Friend(friendObj.getInt("id"),friendObj.getString("name"));
+                        // Проверяем наличие ключей, чтобы избежать ошибок
+                        int id = friendObj.has("id") ? friendObj.getInt("id") : -1;
+                        String name = friendObj.has("name") ? friendObj.getString("name") : 
+                                     (friendObj.has("username") ? friendObj.getString("username") : "Unknown");
+                        
+                        Friend friend = new Friend(id, name);
                         friendsList.add(friend);
                     }
                     if (callback != null) {
