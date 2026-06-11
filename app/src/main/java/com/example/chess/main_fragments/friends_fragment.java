@@ -40,7 +40,8 @@ public class friends_fragment extends Fragment {
 
         // ✅ ДОБАВЛЯЕМ ОДИН ОБЪЕКТ ПРИ СТАРТЕ
         friendsList.add(new Friend(1, "Friend 1"));
-
+        friendsList.add(new Friend(2, "Friend 2"));
+        friendsList.add(new Friend(3, "Friend 3"));
         // Настройка адаптера
         adapter = new FriendAdapter(friendsList);
         recyclerViewFriends.setLayoutManager(new LinearLayoutManager(getContext()));
