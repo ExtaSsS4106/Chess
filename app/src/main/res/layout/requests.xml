@@ -29,7 +29,9 @@
         android:scrollbars="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/divider4"
+        app:layout_constraintVertical_bias="1.0">
 
 
     </androidx.recyclerview.widget.RecyclerView>
@@ -38,12 +40,10 @@
         android:id="@+id/divider4"
         android:layout_width="409dp"
         android:layout_height="1dp"
-        android:layout_marginTop="16dp"
         android:background="?android:attr/listDivider"
         android:backgroundTint="#EDEDED"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView2" />
+        tools:layout_editor_absoluteY="77dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
