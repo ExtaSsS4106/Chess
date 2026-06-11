@@ -6,6 +6,7 @@ import android.widget.Toast;
 
 import com.example.chess.api.Requests;
 import com.example.chess.api.endPoints;
+import com.example.chess.main_fragments.objects.Friend;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -14,7 +15,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class friends {
+public class FriendsCore {
     private String get;
     private String add;
     private String delete;
@@ -23,7 +24,7 @@ public class friends {
     private endPoints endpoints;
     private Context context;
 
-    public friends(Context context) {
+    public FriendsCore(Context context) {
         this.context = context;
         this.requests = new Requests(context);
         this.endpoints = new endPoints();
@@ -44,9 +45,7 @@ public class friends {
                     List<Friend> friendsList = new ArrayList<>();
                     for (int i = 0; i < friendsArray.length(); i++){
                         JSONObject friendObj = friendsArray.getJSONObject(i);
-                        Friend friend = new Friend();
-                        friend.setId(friendObj.getInt("id"));
-                        friend.setName(friendObj.getString("name"));
+                        Friend friend = new Friend(friendObj.getInt("id"),friendObj.getString("name"));
                         friendsList.add(friend);
                     }
                     if (callback != null) {
@@ -69,15 +68,7 @@ public class friends {
         });
     }
 
-    public static class Friend {
-        private int id;
-        private String name;
 
-        public int getId() { return id; }
-        public void setId(int id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-    }
 
 
     public void addFriend(Integer RID, AddFriendCallback callback) throws JSONException {

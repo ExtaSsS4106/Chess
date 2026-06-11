@@ -8,14 +8,13 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.chess.R;
 import com.example.chess.main_fragments.adapters.FriendAdapter;
-import com.example.chess.main_fragments.core.friends;
+import com.example.chess.main_fragments.core.FriendsCore;
 import com.example.chess.main_fragments.objects.Friend;
 
 import java.util.ArrayList;
@@ -28,7 +27,7 @@ public class friends_fragment extends Fragment {
 
     private FriendAdapter adapter;
     private List<Friend> friendsList;
-    private friends friendsManager;
+    private FriendsCore friendsManager;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -38,7 +37,7 @@ public class friends_fragment extends Fragment {
         recyclerViewFriends = view.findViewById(R.id.recyclerViewFriends);
 
         friendsList = new ArrayList<>();
-        friendsManager = new friends(getContext());
+        friendsManager = new FriendsCore(getContext());
         adapter = new FriendAdapter(friendsList);
         recyclerViewFriends.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewFriends.setAdapter(adapter);
@@ -61,7 +60,7 @@ public class friends_fragment extends Fragment {
     }
 
     private void loadFriendsFromServer() {
-        friendsManager.getFriends(new friends.FriendsCallback() {
+        friendsManager.getFriends(new FriendsCore.FriendsCallback() {
             @Override
             public void onSuccess(List<Friend> friends) {
                 requireActivity().runOnUiThread(() -> {
@@ -88,7 +87,7 @@ public class friends_fragment extends Fragment {
 
     private void sendInvite(String userName) {
         try {
-            friendsManager.sendInvite(userName, new friends.SendInviteCallback() {
+            friendsManager.sendInvite(userName, new FriendsCore.SendInviteCallback() {
                 @Override
                 public void onSuccess(String message) {
                     requireActivity().runOnUiThread(() -> {
