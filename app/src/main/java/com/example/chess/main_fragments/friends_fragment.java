@@ -42,11 +42,6 @@ public class friends_fragment extends Fragment {
         recyclerViewFriends.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewFriends.setAdapter(adapter);
 
-        // Устанавливаем listener
-        adapter.setOnFriendDeletedListener(friend -> {
-            loadFriendsFromServer();
-            Toast.makeText(getContext(), "Друг удален: " + friend.getName(), Toast.LENGTH_SHORT).show();
-        });
 
         loadFriendsFromServer();
 
@@ -69,7 +64,6 @@ public class friends_fragment extends Fragment {
                 requireActivity().runOnUiThread(() -> {
                     friendsList.clear();
                     friendsList.addAll(friends);
-                    adapter.notifyDataSetChanged();
 
                     if (friendsList.isEmpty()) {
                         Toast.makeText(getContext(), "У вас пока нет друзей", Toast.LENGTH_SHORT).show();

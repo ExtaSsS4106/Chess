@@ -18,24 +18,15 @@ import com.example.chess.main_fragments.objects.Friend;
 
 import java.util.List;
 
+// Адаптер для Friend объектов
 public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder> {
-    private List<Friend> friends;
-    private FriendsCore friendsCore;
+    private List<Friend> friends;  // Теперь список Friend, а не String
     private Context context;
-    private OnFriendDeletedListener onFriendDeletedListener;
-
-    public interface OnFriendDeletedListener {
-        void onFriendDeleted(Friend friend);  // Упростили, передаем только друга
-    }
-
+    private FriendsCore friendsCore;
     public FriendAdapter(List<Friend> friends, Context context) {
         this.friends = friends;
-        this.friendsCore = new FriendsCore(context);
         this.context = context;
-    }
-
-    public void setOnFriendDeletedListener(OnFriendDeletedListener listener) {
-        this.onFriendDeletedListener = listener;
+        this.friendsCore = new FriendsCore(context);
     }
 
     @NonNull
@@ -47,54 +38,22 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, @SuppressLint("RecyclerView") int position) {
-        Friend friend = friends.get(position);
-        holder.friendName.setText(friend.getName());
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        Friend friend = friends.get(position);  // Получаем объект Friend
+        holder.friendName.setText(friend.getName());  // Показываем имя
 
+        int friendId = friend.getId();
+
+        // Кнопка удаления
         holder.deleteBtn.setOnClickListener(v -> {
-            final int currentPosition = holder.getAdapterPosition();
-            if (currentPosition == RecyclerView.NO_POSITION) {
-                return;
-            }
-
-            final Friend friendToDelete = friends.get(currentPosition);
-
-            try {
-                friendsCore.deleteFriend(friendToDelete.getId(), new FriendsCore.DeleteFriendCallback() {
-                    @Override
-                    public void onSuccess(String message) {
-                        // Удаляем из списка и обновляем адаптер
-                        friends.remove(currentPosition);
-                        notifyItemRemoved(currentPosition);
-                        notifyItemRangeChanged(currentPosition, friends.size() - currentPosition);
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-
-                        // Уведомляем фрагмент
-                        if (onFriendDeletedListener != null) {
-                            onFriendDeletedListener.onFriendDeleted(friendToDelete);
-                        }
-                    }
-
-                    @Override
-                    public void onError(String error) {
-                        Toast.makeText(context, "Ошибка: " + error, Toast.LENGTH_SHORT).show();
-                    }
-                });
-            } catch (Exception e) {
-                Toast.makeText(context, "Ошибка: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
+            friends.remove(position);
+            notifyItemRemoved(position);
         });
     }
 
     @Override
     public int getItemCount() {
         return friends.size();
-    }
-
-    public void updateList(List<Friend> newFriends) {
-        this.friends.clear();
-        this.friends.addAll(newFriends);
-        notifyDataSetChanged();
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
