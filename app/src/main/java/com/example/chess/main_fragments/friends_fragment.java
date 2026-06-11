@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.chess.R;
+import com.example.chess.main_fragments.adapters.FriendAdapter;
+import com.example.chess.main_fragments.objects.Friend;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +26,7 @@ public class friends_fragment extends Fragment {
     private RecyclerView recyclerViewFriends;
 
     private FriendAdapter adapter;
-    private List<String> friendsList;
+    private List<Friend> friendsList;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -37,7 +39,7 @@ public class friends_fragment extends Fragment {
         friendsList = new ArrayList<>();
 
         // ✅ ДОБАВЛЯЕМ ОДИН ОБЪЕКТ ПРИ СТАРТЕ
-        friendsList.add("Friend 1");
+        friendsList.add(new Friend(1, "Friend 1"));
 
         // Настройка адаптера
         adapter = new FriendAdapter(friendsList);
@@ -56,47 +58,5 @@ public class friends_fragment extends Fragment {
 
 
 
-    // Адаптер
-    class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder> {
-        private List<String> friends;
 
-        public FriendAdapter(List<String> friends) {
-            this.friends = friends;
-        }
-
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_friend, parent, false);
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            String friendName = friends.get(position);
-            holder.friendName.setText(friendName);
-
-            // Кнопка удаления
-            holder.deleteBtn.setOnClickListener(v -> {
-
-            });
-        }
-
-        @Override
-        public int getItemCount() {
-            return friends.size();
-        }
-
-        class ViewHolder extends RecyclerView.ViewHolder {
-            TextView friendName;
-            ImageButton deleteBtn;
-
-            public ViewHolder(@NonNull View itemView) {
-                super(itemView);
-                friendName = itemView.findViewById(R.id.friendName);
-                deleteBtn = itemView.findViewById(R.id.deleteFriendBtn);
-            }
-        }
-    }
 }
