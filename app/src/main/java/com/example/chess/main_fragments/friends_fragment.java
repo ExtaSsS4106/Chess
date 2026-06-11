@@ -8,7 +8,6 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -25,58 +24,59 @@ public class friends_fragment extends Fragment {
     private EditText textAreaFriends;
     private ImageButton req_btn;
     private RecyclerView recyclerViewFriends;
+
     private FriendAdapter adapter;
     private List<Friend> friendsList;
-    private FriendsCore friendsCore;
+    private FriendsCore friendsManager;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.friends, container, false);
-
         textAreaFriends = view.findViewById(R.id.textAreaFriends);
         req_btn = view.findViewById(R.id.req_btn);
         recyclerViewFriends = view.findViewById(R.id.recyclerViewFriends);
 
-        // Инициализация
         friendsList = new ArrayList<>();
-        friendsCore = new FriendsCore(getContext());
-
-        // Настройка адаптера
+        friendsManager = new FriendsCore(getContext());
         adapter = new FriendAdapter(friendsList, getContext());
         recyclerViewFriends.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerViewFriends.setAdapter(adapter);
-
         // Устанавливаем listener для обновления после удаления
         adapter.setOnFriendDeletedListener((position, friend) -> {
+            // Просто обновляем список (он уже обновлен в адаптере)
+            // Можно добавить дополнительную логику, например, обновить счетчик друзей
             Toast.makeText(getContext(), "Друг удален: " + friend.getName(), Toast.LENGTH_SHORT).show();
         });
+        loadFriendsFromServer();
 
-        // Загружаем друзей
-        loadFriends();
-
-        req_btn.setOnClickListener(v -> {
-            String userName = textAreaFriends.getText().toString().trim();
-            if (!userName.isEmpty()) {
-                sendInvite(userName);
-            } else {
-                Toast.makeText(getContext(), "Введите имя пользователя", Toast.LENGTH_SHORT).show();
+        req_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String userName = textAreaFriends.getText().toString().trim();
+                if (!userName.isEmpty()) {
+                    sendInvite(userName);
+                } else {
+                    Toast.makeText(getContext(), "Введите имя пользователя", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
         return view;
     }
 
-    private void loadFriends() {
-        friendsCore.getFriends(new FriendsCore.FriendsCallback() {
+    private void loadFriendsFromServer() {
+        friendsManager.getFriends(new FriendsCore.FriendsCallback() {
             @Override
             public void onSuccess(List<Friend> friends) {
                 requireActivity().runOnUiThread(() -> {
                     friendsList.clear();
                     friendsList.addAll(friends);
-                    adapter.updateList(friendsList);
+                    adapter.notifyDataSetChanged();
 
                     if (friendsList.isEmpty()) {
                         Toast.makeText(getContext(), "У вас пока нет друзей", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Загружено друзей: " + friendsList.size(), Toast.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -84,7 +84,7 @@ public class friends_fragment extends Fragment {
             @Override
             public void onError(String error) {
                 requireActivity().runOnUiThread(() -> {
-                    Toast.makeText(getContext(), "Ошибка: " + error, Toast.LENGTH_LONG).show();
+                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_LONG).show();
                 });
             }
         });
@@ -92,13 +92,13 @@ public class friends_fragment extends Fragment {
 
     private void sendInvite(String userName) {
         try {
-            friendsCore.sendInvite(userName, new FriendsCore.SendInviteCallback() {
+            friendsManager.sendInvite(userName, new FriendsCore.SendInviteCallback() {
                 @Override
                 public void onSuccess(String message) {
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
                         textAreaFriends.setText("");
-                        loadFriends();
+                        loadFriendsFromServer();
                     });
                 }
 
