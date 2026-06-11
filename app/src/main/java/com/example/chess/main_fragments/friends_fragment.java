@@ -100,4 +100,5 @@ public class friends_fragment extends Fragment {
             Toast.makeText(getContext(), "Ошибка: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
+
 }

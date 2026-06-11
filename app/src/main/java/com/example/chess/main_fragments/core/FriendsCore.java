@@ -123,7 +123,9 @@ public class FriendsCore {
                     if (jsonResponse.has("status") && jsonResponse.getString("status").equals("ok")) {
                         Toast.makeText(context, "Успешно", Toast.LENGTH_SHORT).show();
                         Log.d("Response", "Code: " + jsonResponse.getString("code"));
-                    } else if (jsonResponse.has("status") && jsonResponse.getString("status").equals("error")) {
+                        if (callback != null)
+                            callback.onSuccess("Успешно удалено"); // <--- БЕЗ ЭТОЙ СТРОКИ АДАПТЕР НЕ УЗНАЕТ ОБ УСПЕХЕ
+                    }else if (jsonResponse.has("status") && jsonResponse.getString("status").equals("error")) {
                         Toast.makeText(context, "Ошибка" + jsonResponse.getString("code"), Toast.LENGTH_SHORT).show();
                         Log.d("Response", "Code: " + jsonResponse.getString("code"));
                     } else {

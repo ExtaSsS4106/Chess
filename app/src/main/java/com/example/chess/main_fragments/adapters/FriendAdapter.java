@@ -37,21 +37,28 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
                 .inflate(R.layout.item_friend, parent, false);
         return new ViewHolder(view);
     }
-
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Friend friend = friends.get(position);
         holder.friendName.setText(friend.getName());
+        int friendId = friend.getId();
 
         holder.deleteBtn.setOnClickListener(v -> {
             try {
-                friendsCore.deleteFriend(friend.getId(), new FriendsCore.DeleteFriendCallback() {
+                friendsCore.deleteFriend(friendId, new FriendsCore.DeleteFriendCallback() {
                     @Override
                     public void onSuccess(String message) {
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-                        // ВОТ ТУТ ГЛАВНОЕ - просто удаляем из списка
-                        friends.remove(position);
-                        notifyItemRemoved(position);
+                        // Получаем АКТУАЛЬНУЮ позицию элемента в момент нажатия
+                        int currentPos = holder.getBindingAdapterPosition();
+
+                        if (currentPos != RecyclerView.NO_POSITION) {
+                            friends.remove(currentPos); // Удаляем из данных
+                            notifyItemRemoved(currentPos); // Анимированно удаляем из UI
+                            // Обновляем индексы оставшихся элементов
+                            notifyItemRangeChanged(currentPos, friends.size());
+
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+                        }
                     }
 
                     @Override
