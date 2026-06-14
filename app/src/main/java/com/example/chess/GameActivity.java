@@ -148,11 +148,12 @@ public class GameActivity extends AppCompatActivity {
             @Override
             public boolean onTouch(View v, android.view.MotionEvent event) {
                 if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
-                    int x = (int) event.getX();
-                    int y = (int) event.getY();
+                    float x = event.getX();
+                    float y = event.getY();
 
-                    int col = x / cellWidth;
-                    int row = y / cellHeight;
+                    // Вычисляем колонку и строку на основе размеров View, а не Bitmap
+                    int col = (int) (x * 8 / v.getWidth());
+                    int row = (int) (y * 8 / v.getHeight());
 
                     if (row >= 0 && row < 8 && col >= 0 && col < 8) {
                         handleCellClick(row, col);
@@ -168,17 +169,28 @@ public class GameActivity extends AppCompatActivity {
         if (selectedPiece == null) {
             // Выбираем фигуру
             ChessPiece piece = pieces[row][col];
-            if (piece != null && piece.isWhite == isWhiteTurn) {
-                selectedPiece = piece;
-                selectedRow = row;
-                selectedCol = col;
-                highlightSelectedCell(row, col);
-                showPossibleMoves(row, col);
-                Toast.makeText(this, "Выбрана " + piece.type, Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Не ваша фигура!", Toast.LENGTH_SHORT).show();
+            if (piece != null) {
+                if (piece.isWhite == isWhiteTurn) {
+                    selectedPiece = piece;
+                    selectedRow = row;
+                    selectedCol = col;
+                    highlightSelectedCell(row, col);
+                    showPossibleMoves(row, col);
+                    Toast.makeText(this, "Выбрана " + piece.type, Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Сейчас ход " + (isWhiteTurn ? "белых" : "черных"), Toast.LENGTH_SHORT).show();
+                }
             }
         } else {
+            // Если нажали на ту же самую фигуру - снимаем выделение
+            if (row == selectedRow && col == selectedCol) {
+                selectedPiece = null;
+                selectedRow = -1;
+                selectedCol = -1;
+                drawAllPieces();
+                return;
+            }
+
             // Пытаемся переместить фигуру
             if (isValidMove(selectedRow, selectedCol, row, col)) {
                 movePiece(selectedRow, selectedCol, row, col);
@@ -194,11 +206,21 @@ public class GameActivity extends AppCompatActivity {
                     Toast.makeText(this, "Мат! Победили " + winner, Toast.LENGTH_LONG).show();
                 }
             } else {
-                Toast.makeText(this, "Невозможный ход!", Toast.LENGTH_SHORT).show();
-                selectedPiece = null;
-                selectedRow = -1;
-                selectedCol = -1;
-                drawAllPieces();
+                // Если нажали на другую свою фигуру - перевыбираем её
+                ChessPiece newPiece = pieces[row][col];
+                if (newPiece != null && newPiece.isWhite == isWhiteTurn) {
+                    selectedPiece = newPiece;
+                    selectedRow = row;
+                    selectedCol = col;
+                    highlightSelectedCell(row, col);
+                    showPossibleMoves(row, col);
+                } else {
+                    Toast.makeText(this, "Невозможный ход!", Toast.LENGTH_SHORT).show();
+                    selectedPiece = null;
+                    selectedRow = -1;
+                    selectedCol = -1;
+                    drawAllPieces();
+                }
             }
         }
     }
