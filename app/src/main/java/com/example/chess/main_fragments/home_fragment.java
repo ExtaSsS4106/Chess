@@ -34,15 +34,15 @@ public class home_fragment extends Fragment {
         startB.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                Intent intent = new Intent(getActivity(), GameActivity.class);
+                startActivity(intent);
             }
         });
 
         startWFB.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getActivity(), GameActivity.class);
-                startActivity(intent);
+
             }
         });
 
