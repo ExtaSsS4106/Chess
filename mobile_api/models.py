@@ -17,7 +17,6 @@ class Rooms(models.Model):
     STATUS_CHOICES = [('created', 'Created'),('playing', 'Playing'), ('waiting', 'Waiting')]
     
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=50)
     
     user_1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rooms_as_user1')
     user_2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rooms_as_user2', null=True, blank=True)
