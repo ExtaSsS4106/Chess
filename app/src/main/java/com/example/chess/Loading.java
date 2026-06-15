@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,6 +27,7 @@ public class Loading extends AppCompatActivity {
     private endPoints endpoints;
     private OkHttpClient client;
     private boolean isConnected = false;
+    private TextView labelL;
     private Handler handler = new Handler();
 
     @Override
@@ -35,6 +37,8 @@ public class Loading extends AppCompatActivity {
 
         endpoints = new endPoints();
         client = new OkHttpClient();
+
+        labelL = findViewById(R.id.label_l);
 
         Button btn_back_l = findViewById(R.id.btn_back_l);
         btn_back_l.setOnClickListener(v -> {
@@ -88,19 +92,19 @@ public class Loading extends AppCompatActivity {
                     JSONObject json = new JSONObject(text);
                     String type = json.optString("type");
 
-                    if ("pong".equals(type)) {
-                        Log.d("Ping-Pong", "✅ Pong received at: " + json.optString("timestamp"));
-                    } else if ("opponent_found".equals(type)) {
+                    if ("opponent_found".equals(type)) {
                         String roomId = json.optString("room_id");
+                        updateStatus(json.optString("message", "Соперник найден!"));
                         startGame(roomId);
                     } else if ("waiting_for_opponent".equals(type)) {
-                        Log.d("WebSocket", "Waiting in room: " + json.optString("room_id"));
+                        updateStatus(json.optString("message", "Ожидание соперника..."));
                     } else if ("search_timeout".equals(type)) {
                         showError(json.optString("message", "Время поиска истекло"));
                     } else if ("search_stopped".equals(type)) {
-                        Log.d("WebSocket", "Search stopped by server");
+                        updateStatus("Поиск остановлен");
                         showError("Поиск остановлен");
                     } else if ("connected".equals(type)) {
+                        updateStatus(json.optString("message", "Подключено к серверу"));
                         Log.d("WebSocket", "Authenticated as " + json.optString("username"));
                     } else if ("error".equals(type)) {
                         showError(json.optString("message", "Ошибка"));
@@ -140,6 +144,14 @@ public class Loading extends AppCompatActivity {
             intent.putExtra("room_id", roomId);
             startActivity(intent);
             finish();
+        });
+    }
+
+    private void updateStatus(String message) {
+        runOnUiThread(() -> {
+            if (labelL != null) {
+                labelL.setText(message);
+            }
         });
     }
 
