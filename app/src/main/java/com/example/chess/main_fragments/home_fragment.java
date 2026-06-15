@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 
 import com.example.chess.GameActivity;
+import com.example.chess.Loading;
 import com.example.chess.authorisation.LoginActivity;
 
 import androidx.fragment.app.Fragment;
@@ -34,7 +35,7 @@ public class home_fragment extends Fragment {
         startB.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getActivity(), GameActivity.class);
+                Intent intent = new Intent(getActivity(), Loading.class);
                 startActivity(intent);
             }
         });
