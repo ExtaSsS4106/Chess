@@ -93,9 +93,9 @@ public class Loading extends AppCompatActivity {
                     String type = json.optString("type");
 
                     if ("opponent_found".equals(type)) {
-                        String roomId = json.optString("room_id");
+                        String channel_id = json.optString("channel_id");
                         updateStatus(json.optString("message", "Соперник найден!"));
-                        startGame(roomId);
+                        startGame(channel_id);
                     } else if ("waiting_for_opponent".equals(type)) {
                         updateStatus(json.optString("message", "Ожидание соперника..."));
                     } else if ("search_timeout".equals(type)) {
