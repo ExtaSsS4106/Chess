@@ -2,6 +2,7 @@ package com.example.chess;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.Toast;
@@ -24,26 +25,31 @@ public class Loading extends AppCompatActivity {
     private WebSocket webSocket;
     private endPoints endpoints;
     private OkHttpClient client;
-
+    private boolean isConnected = false;
+    private Handler handler = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.loading);
-        
+
         endpoints = new endPoints();
         client = new OkHttpClient();
 
         Button btn_back_l = findViewById(R.id.btn_back_l);
         btn_back_l.setOnClickListener(v -> {
-            if (webSocket != null) {
+            if (webSocket != null && isConnected) {
+                Log.d("WebSocket", "Sending close command");
                 webSocket.send("close");
+                // Даем время на отправку
+                handler.postDelayed(() -> finish(), 200);
+            } else {
+                finish();
             }
-            finish();
         });
 
         connectToWebSocket();
-        Log.d("Ping-Pong", String.valueOf(webSocket.send("ping")));
+
     }
 
     private void connectToWebSocket() {
@@ -51,9 +57,8 @@ public class Loading extends AppCompatActivity {
         loadUser.UserData userData = loadUser.loadUserData(this);
         String token = (userData != null) ? userData.getToken() : "";
 
-        // Backend извлекает токен через get_token_from_query: ?token=...
         String url = endpoints.getWS_URL() + endpoints.getSEARCH_ROOM() + "?token=" + token;
-        
+
         Log.d("WebSocket", "Connecting to: " + url);
 
         Request request = new Request.Builder()
@@ -64,6 +69,8 @@ public class Loading extends AppCompatActivity {
             @Override
             public void onOpen(WebSocket webSocket, Response response) {
                 Log.d("WebSocket", "Connection established");
+                isConnected = true;
+
             }
 
             @Override
@@ -73,18 +80,24 @@ public class Loading extends AppCompatActivity {
                     JSONObject json = new JSONObject(text);
                     String type = json.optString("type");
 
-                    // Логика обработки типов сообщений из Django GameConsumer
-                    if ("opponent_found".equals(type)) {
+                    if ("pong".equals(type)) {
+                        Log.d("Ping-Pong", "✅ Pong received at: " + json.optString("timestamp"));
+                    } else if ("opponent_found".equals(type)) {
                         String roomId = json.optString("room_id");
                         startGame(roomId);
                     } else if ("waiting_for_opponent".equals(type)) {
                         Log.d("WebSocket", "Waiting in room: " + json.optString("room_id"));
-                    } else if ("search_timeout".equals(type) || "error".equals(type)) {
-                        showError(json.optString("message", "Ошибка"));
+                    } else if ("search_timeout".equals(type)) {
+                        showError(json.optString("message", "Время поиска истекло"));
+                    } else if ("search_stopped".equals(type)) {
+                        Log.d("WebSocket", "Search stopped by server");
+                        showError("Поиск остановлен");
                     } else if ("connected".equals(type)) {
                         Log.d("WebSocket", "Authenticated as " + json.optString("username"));
+                    } else if ("error".equals(type)) {
+                        showError(json.optString("message", "Ошибка"));
                     }
-                    
+
                 } catch (JSONException e) {
                     Log.e("WebSocket", "Error parsing message", e);
                 }
@@ -93,15 +106,25 @@ public class Loading extends AppCompatActivity {
             @Override
             public void onFailure(WebSocket webSocket, Throwable t, Response response) {
                 Log.e("WebSocket", "Connection failure", t);
-                showError("Ошибка подключения к серверу");
+                isConnected = false;
+                showError("Ошибка подключения к серверу: " + t.getMessage());
             }
 
             @Override
             public void onClosing(WebSocket webSocket, int code, String reason) {
                 Log.d("WebSocket", "Closing: " + reason);
+                isConnected = false;
+            }
+
+            @Override
+            public void onClosed(WebSocket webSocket, int code, String reason) {
+                Log.d("WebSocket", "Closed: " + reason);
+                isConnected = false;
             }
         });
     }
+
+
 
     private void startGame(String roomId) {
         runOnUiThread(() -> {
@@ -122,6 +145,7 @@ public class Loading extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        handler.removeCallbacksAndMessages(null);
         if (webSocket != null) {
             webSocket.close(1000, "Activity destroyed");
         }
