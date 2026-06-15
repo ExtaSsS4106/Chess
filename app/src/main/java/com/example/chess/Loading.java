@@ -41,8 +41,9 @@ public class Loading extends AppCompatActivity {
             }
             finish();
         });
-        Log.d("Ping-Pong", String.valueOf(webSocket.send("ping")));
+
         connectToWebSocket();
+        Log.d("Ping-Pong", String.valueOf(webSocket.send("ping")));
     }
 
     private void connectToWebSocket() {
