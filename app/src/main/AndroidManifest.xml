@@ -27,6 +27,7 @@
         <activity android:name=".authorisation.LoginActivity" />
         <activity android:name=".authorisation.RegActivity" />
         <activity android:name=".GameActivity" />
+        <activity android:name=".Loading" />
     </application>
 
 </manifest>
