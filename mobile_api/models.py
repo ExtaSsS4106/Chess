@@ -20,13 +20,13 @@ class Rooms(models.Model):
     name = models.CharField(max_length=50)
     
     user_1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rooms_as_user1')
-    user_2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rooms_as_user2')
-    user_1_in = models.BooleanField(default=False)
-    user_2_in = models.BooleanField(default=False)
+    user_2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rooms_as_user2', null=True, blank=True)
+    user_1_in = models.BooleanField(default=False, null=True, blank=True)
+    user_2_in = models.BooleanField(default=False, null=True, blank=True)
     
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     winner = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    data = models.JSONField()
+    data = models.JSONField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     
     created_at = models.DateTimeField(auto_now_add=True)
