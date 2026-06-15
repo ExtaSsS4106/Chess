@@ -39,10 +39,18 @@ public class Loading extends AppCompatActivity {
         Button btn_back_l = findViewById(R.id.btn_back_l);
         btn_back_l.setOnClickListener(v -> {
             if (webSocket != null && isConnected) {
-                Log.d("WebSocket", "Sending close command");
-                webSocket.send("close");
-                // Даем время на отправку
-                handler.postDelayed(() -> finish(), 200);
+                Log.d("WebSocket", "Sending close command...");
+                boolean sent = webSocket.send("close");
+                Log.d("WebSocket", "Send result: " + sent);
+                
+                // Даем серверу время обработать сообщение и прислать 'search_stopped'
+                // Если через 1 секунду мы все еще здесь - закрываем принудительно
+                handler.postDelayed(() -> {
+                    if (!isFinishing()) {
+                        Log.d("WebSocket", "Fallback: finishing activity after timeout");
+                        finish();
+                    }
+                }, 1000);
             } else {
                 finish();
             }
