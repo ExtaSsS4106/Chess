@@ -2,7 +2,10 @@ package com.example.chess.api;
 
 public class endPoints {
 
-    private String URL = "http://192.168.31.229:8000";
+    private String PORT = "8000";
+    private String IP = "192.168.31.229";
+    private String URL = "http://"+this.IP+":"+this.PORT;
+    private String WS_URL = "ws://"+this.IP+":"+this.PORT;
     //authorisation
     private String LOGIN = "/mobile_api/app_functional/login";
     private String REGISTER = "/mobile_api/app_functional/register";
@@ -15,12 +18,18 @@ public class endPoints {
     private String GET_REQUESTS = "/mobile_api/app_functional/requests/get";
     private String CANCEL_REQUEST = "/mobile_api/app_functional/requests/cancel";
     private String APROOVE_REQUEST = "/mobile_api/app_functional/requests/aproove";
+    //search game
+    private String SEARCH_ROOM = "/mobile_api/search/game_start/";
 
     //url
-    public void setURL(String url){
-        this.URL = url;
+    public void setPORT(String port){
+        this.PORT = port;
+    }
+    public void setIP(String ip){
+        this.IP = ip;
     }
     public String getURL(){return this.URL;}
+    public String getWS_URL(){return this.WS_URL;}
     //authorisation
     public String getLOGINPath(){return this.LOGIN;}
     public String getREGISTERPath(){return this.REGISTER;}
@@ -33,4 +42,5 @@ public class endPoints {
     public String getGET_REQUESTS(){return this.GET_REQUESTS;}
     public String getCANCEL_REQUEST(){return this.CANCEL_REQUEST;}
     public String getAPROOVE_REQUEST(){return this.APROOVE_REQUEST;}
+    public String getSEARCH_ROOM(){return this.SEARCH_ROOM;}
 }

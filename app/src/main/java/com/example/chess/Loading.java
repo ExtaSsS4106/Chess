@@ -1,23 +1,128 @@
 package com.example.chess;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
+
+import com.example.chess.api.endPoints;
+import com.example.chess.data.loadUser;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.WebSocket;
+import okhttp3.WebSocketListener;
 
 public class Loading extends AppCompatActivity {
+    private WebSocket webSocket;
+    private endPoints endpoints;
+    private OkHttpClient client;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.loading);
-        Button btn_back_l = findViewById(R.id.btn_back_l);
+        
+        endpoints = new endPoints();
+        client = new OkHttpClient();
 
+        Button btn_back_l = findViewById(R.id.btn_back_l);
+        btn_back_l.setOnClickListener(v -> {
+            if (webSocket != null) {
+                webSocket.send("close");
+            }
+            finish();
+        });
+
+        connectToWebSocket();
     }
 
-    private void replaceFragment(Fragment fragment) {
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.content, fragment)
-                .commit();
+    private void connectToWebSocket() {
+        loadUser loadUser = new loadUser();
+        loadUser.UserData userData = loadUser.loadUserData(this);
+        String token = (userData != null) ? userData.getToken() : "";
+
+        // Backend извлекает токен через get_token_from_query: ?token=...
+        String url = endpoints.getWS_URL() + endpoints.getSEARCH_ROOM() + "?token=" + token;
+        
+        Log.d("WebSocket", "Connecting to: " + url);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+
+        webSocket = client.newWebSocket(request, new WebSocketListener() {
+            @Override
+            public void onOpen(WebSocket webSocket, Response response) {
+                Log.d("WebSocket", "Connection established");
+            }
+
+            @Override
+            public void onMessage(WebSocket webSocket, String text) {
+                Log.d("WebSocket", "Received: " + text);
+                try {
+                    JSONObject json = new JSONObject(text);
+                    String type = json.optString("type");
+
+                    // Логика обработки типов сообщений из Django GameConsumer
+                    if ("opponent_found".equals(type)) {
+                        String roomId = json.optString("room_id");
+                        startGame(roomId);
+                    } else if ("waiting_for_opponent".equals(type)) {
+                        Log.d("WebSocket", "Waiting in room: " + json.optString("room_id"));
+                    } else if ("search_timeout".equals(type) || "error".equals(type)) {
+                        showError(json.optString("message", "Ошибка"));
+                    } else if ("connected".equals(type)) {
+                        Log.d("WebSocket", "Authenticated as " + json.optString("username"));
+                    }
+                    
+                } catch (JSONException e) {
+                    Log.e("WebSocket", "Error parsing message", e);
+                }
+            }
+
+            @Override
+            public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+                Log.e("WebSocket", "Connection failure", t);
+                showError("Ошибка подключения к серверу");
+            }
+
+            @Override
+            public void onClosing(WebSocket webSocket, int code, String reason) {
+                Log.d("WebSocket", "Closing: " + reason);
+            }
+        });
+    }
+
+    private void startGame(String roomId) {
+        runOnUiThread(() -> {
+            Intent intent = new Intent(Loading.this, GameActivity.class);
+            intent.putExtra("room_id", roomId);
+            startActivity(intent);
+            finish();
+        });
+    }
+
+    private void showError(String message) {
+        runOnUiThread(() -> {
+            Toast.makeText(Loading.this, message, Toast.LENGTH_SHORT).show();
+            finish();
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (webSocket != null) {
+            webSocket.close(1000, "Activity destroyed");
+        }
     }
 }
