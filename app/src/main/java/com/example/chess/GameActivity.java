@@ -5,12 +5,28 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.chess.api.endPoints;
+import com.example.chess.data.loadUser;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.WebSocket;
+import okhttp3.WebSocketListener;
 
 public class GameActivity extends AppCompatActivity {
 
@@ -19,11 +35,17 @@ public class GameActivity extends AppCompatActivity {
     private int cellWidth, cellHeight;
     private int boardWidth, boardHeight;
 
-    // Шахматные фигуры
     private ChessPiece[][] pieces = new ChessPiece[8][8];
     private ChessPiece selectedPiece = null;
     private int selectedRow = -1, selectedCol = -1;
-    private boolean isWhiteTurn = true; // Белые ходят первыми
+    private boolean isWhiteTurn = true;
+
+    // WebSocket fields
+    private WebSocket webSocket;
+    private OkHttpClient client;
+    private String roomId;
+    private boolean isWhitePlayer = true; // Будет определено при подключении
+    private boolean myTurn = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +53,10 @@ public class GameActivity extends AppCompatActivity {
         setContentView(R.layout.game);
 
         gameTable = findViewById(R.id.gameTable);
+        roomId = getIntent().getStringExtra("room_id");
+
+        client = new OkHttpClient();
+        connectToWebSocket();
 
         gameTable.post(new Runnable() {
             @Override
@@ -43,8 +69,134 @@ public class GameActivity extends AppCompatActivity {
         });
     }
 
+    private void connectToWebSocket() {
+        loadUser loadUser = new loadUser();
+        loadUser.UserData userData = loadUser.loadUserData(this);
+        String token = (userData != null) ? userData.getToken() : "";
+
+        endPoints endpoints = new endPoints();
+        String url = endpoints.getWS_URL() + endpoints.getGAME_SESSION() + roomId + "/?token=" + token;
+
+        Request request = new Request.Builder().url(url).build();
+        webSocket = client.newWebSocket(request, new WebSocketListener() {
+            @Override
+            public void onOpen(WebSocket webSocket, Response response) {
+                Log.d("GameSession", "Connected to game session");
+            }
+
+            @Override
+            public void onMessage(WebSocket webSocket, String text) {
+                Log.d("GameSession", "Received: " + text);
+                try {
+                    JSONObject json = new JSONObject(text);
+                    String type = json.optString("type");
+
+                    switch (type) {
+                        case "connected":
+                            isWhitePlayer = json.optBoolean("is_white", true);
+                            runOnUiThread(() -> {
+                                String color = isWhitePlayer ? "белых" : "черных";
+                                Toast.makeText(GameActivity.this, "Вы играете за " + color, Toast.LENGTH_SHORT).show();
+                                drawAllPieces();
+                            });
+                            break;
+                        case "start_game":
+                            runOnUiThread(() -> {
+                                Toast.makeText(GameActivity.this, "Игра началась!", Toast.LENGTH_SHORT).show();
+                            });
+                            // Сервер может прислать кто мы. Пока предположим Player 1 = White.
+                            // Для простоты, в вашей реализации Session.py, user_1 - создатель.
+                            break;
+                        case "opponent_move":
+                            JSONObject desk = json.getJSONObject("desck");
+                            updateBoardFromJson(desk);
+                            break;
+                        case "waiting":
+                            runOnUiThread(() -> {
+                                Toast.makeText(GameActivity.this, json.optString("message"), Toast.LENGTH_SHORT).show();
+                            });
+                            break;
+                        case "error":
+                            runOnUiThread(() -> {
+                                Toast.makeText(GameActivity.this, json.optString("message"), Toast.LENGTH_LONG).show();
+                            });
+                            break;
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+                Log.e("GameSession", "Failure", t);
+            }
+        });
+    }
+
+    private void updateBoardFromJson(JSONObject desk) {
+        try {
+            JSONArray grid = desk.getJSONArray("grid");
+            isWhiteTurn = desk.getBoolean("isWhiteTurn");
+
+            for (int r = 0; r < 8; r++) {
+                JSONArray rowArray = grid.getJSONArray(r);
+                for (int c = 0; c < 8; c++) {
+                    JSONObject pJson = rowArray.optJSONObject(c);
+                    if (pJson == null || pJson.isNull("type")) {
+                        pieces[r][c] = null;
+                    } else {
+                        pieces[r][c] = new ChessPiece(
+                                pJson.getString("type"),
+                                pJson.getBoolean("isWhite"),
+                                r, c
+                        );
+                    }
+                }
+            }
+            runOnUiThread(this::drawAllPieces);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private JSONObject boardToJson() {
+        try {
+            JSONObject desk = new JSONObject();
+            JSONArray grid = new JSONArray();
+            for (int r = 0; r < 8; r++) {
+                JSONArray rowArray = new JSONArray();
+                for (int c = 0; c < 8; c++) {
+                    if (pieces[r][c] == null) {
+                        rowArray.put(JSONObject.NULL);
+                    } else {
+                        JSONObject pJson = new JSONObject();
+                        pJson.put("type", pieces[r][c].type);
+                        pJson.put("isWhite", pieces[r][c].isWhite);
+                        rowArray.put(pJson);
+                    }
+                }
+                grid.put(rowArray);
+            }
+            desk.put("grid", grid);
+            desk.put("isWhiteTurn", !isWhiteTurn); // Меняем ход после отправки
+            return desk;
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private void sendBoardToServer() {
+        JSONObject desk = boardToJson();
+        if (desk != null && webSocket != null) {
+            webSocket.send(desk.toString());
+        }
+    }
+
     private void drawGrid() {
         android.graphics.drawable.Drawable drawable = gameTable.getDrawable();
+        if (drawable == null) return;
         Bitmap originalBitmap = ((android.graphics.drawable.BitmapDrawable) drawable).getBitmap();
 
         boardBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
@@ -60,7 +212,6 @@ public class GameActivity extends AppCompatActivity {
         paint.setColor(Color.BLACK);
         paint.setStrokeWidth(2f);
 
-        // Рисуем сетку
         for (int i = 1; i <= 7; i++) {
             canvas.drawLine(i * cellWidth, 0, i * cellWidth, boardHeight, paint);
             canvas.drawLine(0, i * cellHeight, boardWidth, i * cellHeight, paint);
@@ -70,35 +221,25 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void initPieces() {
-        // Пешки (черные - вверху, белые - внизу)
+        // Стандартная расстановка
         for (int i = 0; i < 8; i++) {
-            pieces[1][i] = new ChessPiece("pawn", false, 1, i); // Черные пешки
-            pieces[6][i] = new ChessPiece("pawn", true, 6, i);  // Белые пешки
+            pieces[1][i] = new ChessPiece("pawn", false, 1, i);
+            pieces[6][i] = new ChessPiece("pawn", true, 6, i);
         }
-
-        // Ладьи
         pieces[0][0] = new ChessPiece("rook", false, 0, 0);
         pieces[0][7] = new ChessPiece("rook", false, 0, 7);
         pieces[7][0] = new ChessPiece("rook", true, 7, 0);
         pieces[7][7] = new ChessPiece("rook", true, 7, 7);
-
-        // Кони
         pieces[0][1] = new ChessPiece("knight", false, 0, 1);
         pieces[0][6] = new ChessPiece("knight", false, 0, 6);
         pieces[7][1] = new ChessPiece("knight", true, 7, 1);
         pieces[7][6] = new ChessPiece("knight", true, 7, 6);
-
-        // Слоны
         pieces[0][2] = new ChessPiece("bishop", false, 0, 2);
         pieces[0][5] = new ChessPiece("bishop", false, 0, 5);
         pieces[7][2] = new ChessPiece("bishop", true, 7, 2);
         pieces[7][5] = new ChessPiece("bishop", true, 7, 5);
-
-        // Ферзи
         pieces[0][3] = new ChessPiece("queen", false, 0, 3);
         pieces[7][3] = new ChessPiece("queen", true, 7, 3);
-
-        // Короли
         pieces[0][4] = new ChessPiece("king", false, 0, 4);
         pieces[7][4] = new ChessPiece("king", true, 7, 4);
     }
@@ -114,33 +255,35 @@ public class GameActivity extends AppCompatActivity {
                 }
             }
         }
-
         gameTable.setImageBitmap(tempBitmap);
     }
 
     private void drawPiece(Canvas canvas, ChessPiece piece, int row, int col) {
-        int x = col * cellWidth;
-        int y = row * cellHeight;
+        // Отражение для черного игрока
+        int displayRow = isWhitePlayer ? row : 7 - row;
+        int displayCol = isWhitePlayer ? col : 7 - col;
+
+        int x = displayCol * cellWidth;
+        int y = displayRow * cellHeight;
 
         Paint paint = new Paint();
         paint.setTextSize(cellHeight * 0.6f);
         paint.setTextAlign(Paint.Align.CENTER);
-
-        // Используем Unicode символы для фигур
-        String symbol = getPieceSymbol(piece);
         paint.setColor(piece.isWhite ? Color.WHITE : Color.BLACK);
 
-        canvas.drawText(symbol, x + cellWidth / 2, y + cellHeight * 0.7f, paint);
+        canvas.drawText(getPieceSymbol(piece), x + cellWidth / 2, y + cellHeight * 0.7f, paint);
     }
 
     private String getPieceSymbol(ChessPiece piece) {
-        if (piece.type.equals("king")) return piece.isWhite ? "♔" : "♚";
-        if (piece.type.equals("queen")) return piece.isWhite ? "♕" : "♛";
-        if (piece.type.equals("rook")) return piece.isWhite ? "♖" : "♜";
-        if (piece.type.equals("bishop")) return piece.isWhite ? "♗" : "♝";
-        if (piece.type.equals("knight")) return piece.isWhite ? "♘" : "♞";
-        if (piece.type.equals("pawn")) return piece.isWhite ? "♙" : "♟";
-        return "?";
+        switch (piece.type) {
+            case "king": return piece.isWhite ? "♔" : "♚";
+            case "queen": return piece.isWhite ? "♕" : "♛";
+            case "rook": return piece.isWhite ? "♖" : "♜";
+            case "bishop": return piece.isWhite ? "♗" : "♝";
+            case "knight": return piece.isWhite ? "♘" : "♞";
+            case "pawn": return piece.isWhite ? "♙" : "♟";
+            default: return "?";
+        }
     }
 
     private void setupTouchListener() {
@@ -151,9 +294,12 @@ public class GameActivity extends AppCompatActivity {
                     float x = event.getX();
                     float y = event.getY();
 
-                    // Вычисляем колонку и строку на основе размеров View, а не Bitmap
-                    int col = (int) (x * 8 / v.getWidth());
-                    int row = (int) (y * 8 / v.getHeight());
+                    int displayCol = (int) (x * 8 / v.getWidth());
+                    int displayRow = (int) (y * 8 / v.getHeight());
+
+                    // Перевод в реальные координаты массива
+                    int row = isWhitePlayer ? displayRow : 7 - displayRow;
+                    int col = isWhitePlayer ? displayCol : 7 - displayCol;
 
                     if (row >= 0 && row < 8 && col >= 0 && col < 8) {
                         handleCellClick(row, col);
@@ -166,61 +312,33 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void handleCellClick(int row, int col) {
+        // Проверка очереди хода
+        if (isWhiteTurn != isWhitePlayer) {
+            Toast.makeText(this, "Сейчас ход соперника", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (selectedPiece == null) {
-            // Выбираем фигуру
             ChessPiece piece = pieces[row][col];
-            if (piece != null) {
-                if (piece.isWhite == isWhiteTurn) {
-                    selectedPiece = piece;
-                    selectedRow = row;
-                    selectedCol = col;
-                    highlightSelectedCell(row, col);
-                    showPossibleMoves(row, col);
-                    Toast.makeText(this, "Выбрана " + piece.type, Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "Сейчас ход " + (isWhiteTurn ? "белых" : "черных"), Toast.LENGTH_SHORT).show();
-                }
+            if (piece != null && piece.isWhite == isWhitePlayer) {
+                selectedPiece = piece;
+                selectedRow = row;
+                selectedCol = col;
+                highlightSelectedCell(row, col);
+                Toast.makeText(this, "Выбрана " + piece.type, Toast.LENGTH_SHORT).show();
             }
         } else {
-            // Если нажали на ту же самую фигуру - снимаем выделение
-            if (row == selectedRow && col == selectedCol) {
-                selectedPiece = null;
-                selectedRow = -1;
-                selectedCol = -1;
-                drawAllPieces();
-                return;
-            }
-
-            // Пытаемся переместить фигуру
             if (isValidMove(selectedRow, selectedCol, row, col)) {
                 movePiece(selectedRow, selectedCol, row, col);
+                sendBoardToServer(); // Отправляем состояние после хода
                 selectedPiece = null;
                 selectedRow = -1;
                 selectedCol = -1;
                 isWhiteTurn = !isWhiteTurn;
                 drawAllPieces();
-
-                // Проверка на мат (упрощенная)
-                if (isCheckmate()) {
-                    String winner = isWhiteTurn ? "Черные" : "Белые";
-                    Toast.makeText(this, "Мат! Победили " + winner, Toast.LENGTH_LONG).show();
-                }
             } else {
-                // Если нажали на другую свою фигуру - перевыбираем её
-                ChessPiece newPiece = pieces[row][col];
-                if (newPiece != null && newPiece.isWhite == isWhiteTurn) {
-                    selectedPiece = newPiece;
-                    selectedRow = row;
-                    selectedCol = col;
-                    highlightSelectedCell(row, col);
-                    showPossibleMoves(row, col);
-                } else {
-                    Toast.makeText(this, "Невозможный ход!", Toast.LENGTH_SHORT).show();
-                    selectedPiece = null;
-                    selectedRow = -1;
-                    selectedCol = -1;
-                    drawAllPieces();
-                }
+                selectedPiece = null;
+                drawAllPieces();
             }
         }
     }
@@ -229,53 +347,29 @@ public class GameActivity extends AppCompatActivity {
         Bitmap tempBitmap = boardBitmap.copy(Bitmap.Config.ARGB_8888, true);
         Canvas canvas = new Canvas(tempBitmap);
 
-        // Рисуем все фигуры
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 8; c++) {
-                if (pieces[r][c] != null) {
-                    drawPiece(canvas, pieces[r][c], r, c);
-                }
+                if (pieces[r][c] != null) drawPiece(canvas, pieces[r][c], r, c);
             }
         }
 
-        // Рисуем выделение
-        Paint highlight = new Paint();
-        highlight.setColor(Color.argb(100, 255, 255, 0));
-        canvas.drawRect(col * cellWidth, row * cellHeight,
-                (col + 1) * cellWidth, (row + 1) * cellHeight, highlight);
-
-        gameTable.setImageBitmap(tempBitmap);
-    }
-
-    private void showPossibleMoves(int row, int col) {
-        Bitmap tempBitmap = boardBitmap.copy(Bitmap.Config.ARGB_8888, true);
-        Canvas canvas = new Canvas(tempBitmap);
-
-        // Рисуем все фигуры
-        for (int r = 0; r < 8; r++) {
-            for (int c = 0; c < 8; c++) {
-                if (pieces[r][c] != null) {
-                    drawPiece(canvas, pieces[r][c], r, c);
-                }
-            }
-        }
-
-        // Показываем возможные ходы
         List<int[]> moves = getPossibleMoves(row, col);
         Paint movePaint = new Paint();
         movePaint.setColor(Color.argb(150, 0, 255, 0));
 
         for (int[] move : moves) {
             int r = move[0], c = move[1];
-            canvas.drawRect(c * cellWidth, r * cellHeight,
-                    (c + 1) * cellWidth, (r + 1) * cellHeight, movePaint);
+            int displayR = isWhitePlayer ? r : 7 - r;
+            int displayC = isWhitePlayer ? c : 7 - c;
+            canvas.drawRect(displayC * cellWidth, displayR * cellHeight,
+                    (displayC + 1) * cellWidth, (displayR + 1) * cellHeight, movePaint);
         }
 
-        // Выделяем выбранную клетку
         Paint highlight = new Paint();
         highlight.setColor(Color.argb(100, 255, 255, 0));
-        canvas.drawRect(col * cellWidth, row * cellHeight,
-                (col + 1) * cellWidth, (row + 1) * cellHeight, highlight);
+        int dr = isWhitePlayer ? row : 7 - row;
+        int dc = isWhitePlayer ? col : 7 - col;
+        canvas.drawRect(dc * cellWidth, dr * cellHeight, (dc + 1) * cellWidth, (dr + 1) * cellHeight, highlight);
 
         gameTable.setImageBitmap(tempBitmap);
     }
@@ -283,200 +377,90 @@ public class GameActivity extends AppCompatActivity {
     private List<int[]> getPossibleMoves(int row, int col) {
         ChessPiece piece = pieces[row][col];
         if (piece == null) return new ArrayList<>();
-
         List<int[]> moves = new ArrayList<>();
-
         switch (piece.type) {
-            case "pawn":
-                getPawnMoves(row, col, piece.isWhite, moves);
-                break;
-            case "rook":
-                getRookMoves(row, col, piece.isWhite, moves);
-                break;
-            case "knight":
-                getKnightMoves(row, col, piece.isWhite, moves);
-                break;
-            case "bishop":
-                getBishopMoves(row, col, piece.isWhite, moves);
-                break;
-            case "queen":
-                getQueenMoves(row, col, piece.isWhite, moves);
-                break;
-            case "king":
-                getKingMoves(row, col, piece.isWhite, moves);
-                break;
+            case "pawn": getPawnMoves(row, col, piece.isWhite, moves); break;
+            case "rook": getRookMoves(row, col, piece.isWhite, moves); break;
+            case "knight": getKnightMoves(row, col, piece.isWhite, moves); break;
+            case "bishop": getBishopMoves(row, col, piece.isWhite, moves); break;
+            case "queen": getQueenMoves(row, col, piece.isWhite, moves); break;
+            case "king": getKingMoves(row, col, piece.isWhite, moves); break;
         }
-
         return moves;
     }
 
     private void getPawnMoves(int row, int col, boolean isWhite, List<int[]> moves) {
-        int direction = isWhite ? -1 : 1;
-        int startRow = isWhite ? 6 : 1;
-
-        // Ход вперед на одну клетку
-        int newRow = row + direction;
-        if (newRow >= 0 && newRow < 8 && pieces[newRow][col] == null) {
-            moves.add(new int[]{newRow, col});
-
-            // Ход на две клетки с начальной позиции
-            if (row == startRow && pieces[row + 2 * direction][col] == null) {
-                moves.add(new int[]{row + 2 * direction, col});
-            }
+        int dir = isWhite ? -1 : 1;
+        int nextR = row + dir;
+        if (nextR >= 0 && nextR < 8 && pieces[nextR][col] == null) {
+            moves.add(new int[]{nextR, col});
+            int startR = isWhite ? 6 : 1;
+            if (row == startR && pieces[row + 2 * dir][col] == null) moves.add(new int[]{row + 2 * dir, col});
         }
-
-        // Атака по диагонали
         for (int dc : new int[]{-1, 1}) {
-            int newCol = col + dc;
-            if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
-                ChessPiece target = pieces[newRow][newCol];
-                if (target != null && target.isWhite != isWhite) {
-                    moves.add(new int[]{newRow, newCol});
-                }
+            int nc = col + dc;
+            if (nextR >= 0 && nextR < 8 && nc >= 0 && nc < 8) {
+                ChessPiece t = pieces[nextR][nc];
+                if (t != null && t.isWhite != isWhite) moves.add(new int[]{nextR, nc});
             }
         }
     }
 
-    private void getRookMoves(int row, int col, boolean isWhite, List<int[]> moves) {
-        // Вверх, вниз, влево, вправо
-        int[][] directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-        getLinearMoves(row, col, isWhite, moves, directions);
-    }
-
-    private void getBishopMoves(int row, int col, boolean isWhite, List<int[]> moves) {
-        // По диагоналям
-        int[][] directions = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
-        getLinearMoves(row, col, isWhite, moves, directions);
-    }
-
-    private void getQueenMoves(int row, int col, boolean isWhite, List<int[]> moves) {
-        // Все направления
-        int[][] directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
-        getLinearMoves(row, col, isWhite, moves, directions);
-    }
-
-    private void getLinearMoves(int row, int col, boolean isWhite, List<int[]> moves, int[][] directions) {
-        for (int[] dir : directions) {
-            int r = row + dir[0];
-            int c = col + dir[1];
-
+    private void getLinearMoves(int row, int col, boolean isWhite, List<int[]> moves, int[][] dirs) {
+        for (int[] d : dirs) {
+            int r = row + d[0], c = col + d[1];
             while (r >= 0 && r < 8 && c >= 0 && c < 8) {
-                ChessPiece target = pieces[r][c];
-                if (target == null) {
-                    moves.add(new int[]{r, c});
-                } else {
-                    if (target.isWhite != isWhite) {
-                        moves.add(new int[]{r, c});
-                    }
+                if (pieces[r][c] == null) moves.add(new int[]{r, c});
+                else {
+                    if (pieces[r][c].isWhite != isWhite) moves.add(new int[]{r, c});
                     break;
                 }
-                r += dir[0];
-                c += dir[1];
+                r += d[0]; c += d[1];
             }
         }
     }
 
+    private void getRookMoves(int r, int c, boolean w, List<int[]> m) { getLinearMoves(r, c, w, m, new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}); }
+    private void getBishopMoves(int r, int c, boolean w, List<int[]> m) { getLinearMoves(r, c, w, m, new int[][]{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}); }
+    private void getQueenMoves(int r, int c, boolean w, List<int[]> m) { getLinearMoves(r, c, w, m, new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}}); }
     private void getKnightMoves(int row, int col, boolean isWhite, List<int[]> moves) {
-        int[][] knightMoves = {
-                {-2, -1}, {-2, 1}, {-1, -2}, {-1, 2},
-                {1, -2}, {1, 2}, {2, -1}, {2, 1}
-        };
-
-        for (int[] move : knightMoves) {
-            int r = row + move[0];
-            int c = col + move[1];
-
-            if (r >= 0 && r < 8 && c >= 0 && c < 8) {
-                ChessPiece target = pieces[r][c];
-                if (target == null || target.isWhite != isWhite) {
-                    moves.add(new int[]{r, c});
-                }
-            }
+        int[][] kMoves = {{-2, -1}, {-2, 1}, {-1, -2}, {-1, 2}, {1, -2}, {1, 2}, {2, -1}, {2, 1}};
+        for (int[] m : kMoves) {
+            int r = row + m[0], c = col + m[1];
+            if (r >= 0 && r < 8 && c >= 0 && c < 8 && (pieces[r][c] == null || pieces[r][c].isWhite != isWhite)) moves.add(new int[]{r, c});
         }
     }
-
     private void getKingMoves(int row, int col, boolean isWhite, List<int[]> moves) {
-        for (int dr = -1; dr <= 1; dr++) {
-            for (int dc = -1; dc <= 1; dc++) {
-                if (dr == 0 && dc == 0) continue;
-
-                int r = row + dr;
-                int c = col + dc;
-
-                if (r >= 0 && r < 8 && c >= 0 && c < 8) {
-                    ChessPiece target = pieces[r][c];
-                    if (target == null || target.isWhite != isWhite) {
-                        moves.add(new int[]{r, c});
-                    }
-                }
-            }
+        for (int dr = -1; dr <= 1; dr++) for (int dc = -1; dc <= 1; dc++) {
+            if (dr == 0 && dc == 0) continue;
+            int r = row + dr, c = col + dc;
+            if (r >= 0 && r < 8 && c >= 0 && c < 8 && (pieces[r][c] == null || pieces[r][c].isWhite != isWhite)) moves.add(new int[]{r, c});
         }
     }
 
     private boolean isValidMove(int fromRow, int fromCol, int toRow, int toCol) {
-        ChessPiece piece = pieces[fromRow][fromCol];
-        if (piece == null) return false;
-
-        // Проверяем, что целевая клетка не занята своей фигурой
-        ChessPiece target = pieces[toRow][toCol];
-        if (target != null && target.isWhite == piece.isWhite) return false;
-
-        // Получаем возможные ходы
         List<int[]> moves = getPossibleMoves(fromRow, fromCol);
-
-        // Проверяем, есть ли целевая клетка в списке возможных ходов
-        for (int[] move : moves) {
-            if (move[0] == toRow && move[1] == toCol) {
-                return true;
-            }
-        }
-
+        for (int[] m : moves) if (m[0] == toRow && m[1] == toCol) return true;
         return false;
     }
 
     private void movePiece(int fromRow, int fromCol, int toRow, int toCol) {
-        ChessPiece piece = pieces[fromRow][fromCol];
-        pieces[toRow][toCol] = piece;
+        pieces[toRow][toCol] = pieces[fromRow][fromCol];
         pieces[fromRow][fromCol] = null;
-
-        // Обновляем позицию фигуры
-        piece.row = toRow;
-        piece.col = toCol;
-
-        // Превращение пешки (упрощенно)
-        if (piece.type.equals("pawn") && (toRow == 0 || toRow == 7)) {
-            piece.type = "queen";
-            Toast.makeText(this, "Пешка превратилась в ферзя!", Toast.LENGTH_SHORT).show();
-        }
     }
 
-    private boolean isCheckmate() {
-        // Упрощенная проверка мата (просто проверяем есть ли ходы у текущего игрока)
-        for (int row = 0; row < 8; row++) {
-            for (int col = 0; col < 8; col++) {
-                ChessPiece piece = pieces[row][col];
-                if (piece != null && piece.isWhite == isWhiteTurn) {
-                    List<int[]> moves = getPossibleMoves(row, col);
-                    if (!moves.isEmpty()) {
-                        return false; // Есть хотя бы один ход
-                    }
-                }
-            }
-        }
-        return true; // Нет доступных ходов - мат
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (webSocket != null) webSocket.close(1000, "Activity closed");
     }
 
-    // Класс шахматной фигуры
     class ChessPiece {
-        String type; // king, queen, rook, bishop, knight, pawn
+        String type;
         boolean isWhite;
         int row, col;
-
         ChessPiece(String type, boolean isWhite, int row, int col) {
-            this.type = type;
-            this.isWhite = isWhite;
-            this.row = row;
-            this.col = col;
+            this.type = type; this.isWhite = isWhite; this.row = row; this.col = col;
         }
     }
 }

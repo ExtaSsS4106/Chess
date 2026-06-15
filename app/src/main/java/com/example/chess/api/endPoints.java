@@ -20,6 +20,7 @@ public class endPoints {
     private String APROOVE_REQUEST = "/mobile_api/app_functional/requests/aproove";
     //search game
     private String SEARCH_ROOM = "/mobile_api/search/game_start/";
+    private String GAME_SESSION = "/mobile_api/session/";
 
     //url
     public void setPORT(String port){
@@ -43,4 +44,5 @@ public class endPoints {
     public String getCANCEL_REQUEST(){return this.CANCEL_REQUEST;}
     public String getAPROOVE_REQUEST(){return this.APROOVE_REQUEST;}
     public String getSEARCH_ROOM(){return this.SEARCH_ROOM;}
+    public String getGAME_SESSION(){return this.GAME_SESSION;}
 }
