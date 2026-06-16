@@ -10,29 +10,29 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from mobile_api.models import Rooms, Requests, Friends
-
+import uuid
 
 class GameConsumer(AsyncWebsocketConsumer):
     searching: bool = True
     stop_searching: bool = False
     search_task = None
+    user_id = None  # Сохраняем ID пользователя отдельно
     
     async def connect(self):
-        # Получаем токен из query string
         query_string = self.scope['query_string'].decode('utf-8')
         token = self.get_token_from_query(query_string)
         
-        # Аутентифицируем пользователя по токену
         self.user = await self.authenticate_user(token)
         
         if self.user is None:
             await self.close()
             return
         
-        # Принимаем соединение
+        # Сохраняем ID пользователя
+        self.user_id = self.user.id
+        
         await self.accept()
         
-        # Отправляем приветствие
         await self.send(text_data=json.dumps({
             'type': 'connected',
             'user_id': self.user.id,
@@ -40,7 +40,6 @@ class GameConsumer(AsyncWebsocketConsumer):
             'message': 'Поиск игроков запущен'
         }))
         
-        # ЗАПУСКАЕМ ПОИСК В ФОНЕ, чтобы connect завершился и receive работал
         self.searching = True
         self.search_task = asyncio.create_task(self.find_opponent_loop())
     
@@ -65,7 +64,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             return
         
         if text_data == 'close':
-            print(f"User {self.user.username} requested to close the connection")
+            print(f"User {self.user.username} requested to close")
             self.searching = False
             self.stop_searching = True
             if self.search_task:
@@ -78,11 +77,8 @@ class GameConsumer(AsyncWebsocketConsumer):
             await asyncio.sleep(0.1)
             await self.close()
             return
-        
-    
     
     def get_token_from_query(self, query_string):
-        """Извлекаем токен из query string"""
         params = {}
         for param in query_string.split('&'):
             if '=' in param:
@@ -92,11 +88,9 @@ class GameConsumer(AsyncWebsocketConsumer):
     
     @database_sync_to_async
     def authenticate_user(self, token):
-        """Аутентификация по JWT токену"""
         if not token:
             print("No token provided")
             return None
-        
         try:
             access_token = AccessToken(token)
             user_id = access_token['user_id']
@@ -108,107 +102,109 @@ class GameConsumer(AsyncWebsocketConsumer):
             return None
     
     async def find_opponent_loop(self):
-        """Фоновый цикл поиска соперника"""
         timeout = 180
         elapsed = 0
         waiting_message_sent = False
-        
+
         try:
             while self.searching and elapsed < timeout:
                 if self.stop_searching:
                     return
-                
-                # 1. Ищем чужую свободную комнату
-                free_room_id = await self.get_free_room_id()
-                if free_room_id:
-                    if await self.set_status_for_random_room(free_room_id):
-                        room_data = await self.get_room_data(free_room_id)
-                        if room_data:
-                            await self.send(text_data=json.dumps({
-                                'type': 'opponent_found',
-                                'room_id': free_room_id,
-                                'message': f'Найден соперник: {room_data["user_1_username"]}'
-                            }))
-                            return  # Выходим из поиска
-                
-                # 2. Проверяем свою комнату (не зашел ли кто-то)
-                my_room_id = await self.get_own_room_id()
-                if my_room_id:
-                    room_data = await self.get_room_data(my_room_id)
+
+                # 1. Проверяем свою комнату
+                my_room_pk, channel_id = await self.get_own_room_id()
+                if my_room_pk:
+                    room_data = await self.get_room_data(my_room_pk)
                     if room_data and room_data.get('user_2_id'):
                         await self.send(text_data=json.dumps({
                             'type': 'opponent_found',
-                            'room_id': my_room_id,
+                            'channel_id': channel_id,  # <- channel_id для клиента
                             'message': f'Соперник {room_data["user_2_username"]} подключился!'
                         }))
                         return
-                    elif not waiting_message_sent:
-                        # Отправляем сообщение об ожидании только один раз
+
+                # 2. Ищем чужую свободную комнату
+                free_room_pk, channel_id = await self.get_free_room_id()
+                if free_room_pk:
+                    print(f"[DEBUG] Found free room {free_room_pk}, trying to join...")
+                    success = await self.set_status_for_random_room(free_room_pk)
+                    if success:
+                        print(f"[DEBUG] Successfully joined room {free_room_pk}")
+                        await self.delete_room_own()
+                        room_data = await self.get_room_data(free_room_pk)
                         await self.send(text_data=json.dumps({
-                            'type': 'waiting_for_opponent',
-                            'room_id': my_room_id,
-                            'message': 'Ожидание соперника...'
+                            'type': 'opponent_found',
+                            'channel_id': channel_id,  # <- channel_id для клиента
+                            'message': f'Найден соперник: {room_data["user_1_username"]}'
                         }))
-                        waiting_message_sent = True
-                else:
-                    # Если своей нет - создаем
-                    my_room_id = await self.create_room()
-                    if my_room_id:
-                        waiting_message_sent = False
-                
-                if elapsed % 15 == 0 and elapsed > 0:
-                    print(f"[DEBUG] User {self.user.username} searching... {elapsed}s")
-                
-                await asyncio.sleep(3)
-                elapsed += 3
-            
-            # Таймаут
-            if elapsed >= timeout:
-                await self.send(text_data=json.dumps({
-                    'type': 'search_timeout',
-                    'message': 'Поиск игроков завершён по таймауту'
-                }))
-                await self.close()
-                
+                        return
+                    else:
+                        print(f"[DEBUG] Failed to join room {free_room_pk}")
+
+                # 3. Создаем свою комнату если нет
+                if not my_room_pk:
+                    my_room_pk = await self.create_room()
+                    waiting_message_sent = False
+                    if my_room_pk:
+                        print(f"[DEBUG] Created own room {my_room_pk}")
+
+                if my_room_pk and not waiting_message_sent:
+                    # channel_id для waiting сообщения берём из БД
+                    _, my_channel_id = await self.get_own_room_id()
+                    await self.send(text_data=json.dumps({
+                        'type': 'waiting_for_opponent',
+                        'room_id': my_channel_id,
+                        'message': 'Ожидание соперника...'
+                    }))
+                    waiting_message_sent = True
+
+                await asyncio.sleep(1)
+                elapsed += 1
+
+            await self.send(text_data=json.dumps({'type': 'search_timeout'}))
+            await self.close()
+
         except asyncio.CancelledError:
-            print(f"[DEBUG] Search task cancelled for {self.user.username}")
+            pass
         except Exception as e:
-            print(f"[ERROR] in find_opponent_loop: {e}")
+            print(f"Error in find_opponent_loop: {e}")
             await self.close()
     
     @database_sync_to_async
     def get_own_room_id(self):
-        """Получаем ID собственной комнаты пользователя (включая статус 'playing')"""
         try:
-            # Ищем комнату, где мы создатель, в любом активном статусе
             room = Rooms.objects.filter(
                 type='random', 
-                user_1=self.user
+                user_1_id=self.user_id
             ).filter(
                 models.Q(status='created') | models.Q(status='playing')
             ).first()
-            return room.id if room else None
+            if room:
+                return room.id, room.channel_id
+            else:
+                return None, None
         except Exception as e:
             print(f"Error in get_own_room_id: {e}")
             return None
     
     @database_sync_to_async
     def get_free_room_id(self):
-        """Ищем свободную комнату для подключения"""
         try:
             room = Rooms.objects.filter(
                 type='random', 
                 status='created', 
                 user_2__isnull=True
-            ).exclude(user_1=self.user).first()
-            return room.id if room else None
+            ).exclude(user_1_id=self.user_id).first()
+            if room:
+                return room.id, room.channel_id
+            else:
+                return None, None
         except Exception as e:
             print(f"Error in get_free_room_id: {e}")
             return None
     
     @database_sync_to_async
     def get_room_data(self, room_id):
-        """Возвращает СЛОВАРЬ с данными, не объект"""
         try:
             room = Rooms.objects.get(id=room_id)
             return {
@@ -218,7 +214,8 @@ class GameConsumer(AsyncWebsocketConsumer):
                 'user_2_id': room.user_2.id if room.user_2 else None,
                 'user_2_username': room.user_2.username if room.user_2 else None,
                 'status': room.status,
-                'type': room.type
+                'type': room.type,
+                'channel_id': room.channel_id
             }
         except Rooms.DoesNotExist:
             return None
@@ -228,30 +225,37 @@ class GameConsumer(AsyncWebsocketConsumer):
     
     @database_sync_to_async
     def delete_room_own(self):
-        """Удаляем свою комнату"""
         try:
-            # Удаляем комнаты где пользователь создатель
-            Rooms.objects.filter(type='random', user_1=self.user).delete()
-            # Освобождаем комнаты, где пользователь был вторым
-            Rooms.objects.filter(type='random', user_2=self.user).update(user_2=None)
+            Rooms.objects.filter(type='random', status="created", user_1_id=self.user_id).delete()
+            print(f"[DEBUG] Cleaned up rooms for user {self.user_id}")
         except Exception as e:
             print(f"Error in delete_room_own: {e}")
         return None
     
     @database_sync_to_async
     def set_status_for_random_room(self, room_id):
-        """Устанавливаем статус для случайной комнаты"""
         try:
             room = Rooms.objects.get(id=room_id)
+            print(f"[DEBUG] Room {room_id}: status={room.status}, type={room.type}, user_2={room.user_2}")
+            
             if room.status != 'created':
+                print(f"[DEBUG] Room status is {room.status}, not 'created'")
                 return False
             if room.type != 'random':
+                print(f"[DEBUG] Room type is {room.type}, not 'random'")
                 return False
+            
+            user = User.objects.get(id=self.user_id)
+            print(room.user_2)
+            room.user_2 = user
+            print(room.user_2)
             room.status = 'playing'
-            room.user_2 = self.user
             room.save()
+            print(f"[DEBUG] SUCCESS! User {user.username} (id={self.user_id}) assigned as user_2 to room {room_id}")
+            print(f"[DEBUG] After save: user_2_id={room.user_2.id if room.user_2 else None}")
             return True
         except Rooms.DoesNotExist:
+            print(f"[DEBUG] Room {room_id} does not exist")
             return False
         except Exception as e:
             print(f"Error in set_status_for_random_room: {e}")
@@ -259,14 +263,24 @@ class GameConsumer(AsyncWebsocketConsumer):
     
     @database_sync_to_async
     def create_room(self):
-        """Создаём комнату для случайной игры"""
         try:
-            room = Rooms.objects.create(type='random', status='created', user_1=self.user)
+            channel_id = self.generate_unique_channel_id()
+            user = User.objects.get(id=self.user_id)
+            room = Rooms.objects.create(type='random', status='created', user_1=user, channel_id=channel_id)
+            print(f"[DEBUG] Created room {room.id} for user {user.username}")
             return room.id
         except Exception as e:
             print(f"Error in create_room: {e}")
             return None
-    
+        
+    def generate_unique_channel_id(self):
+        while True:
+            channel_id = str(uuid.uuid4())[:25]  # Генерируем ID
+            if not Rooms.objects.filter(channel_id=channel_id).exists():
+                return channel_id
 
+class PrivateRoom(APIView):
+    permission_classes = (IsAuthenticated,)
 
-
+    def post(self, request):
+        return None

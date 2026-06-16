@@ -14,9 +14,10 @@ class Friends(models.Model):
     
 class Rooms(models.Model):
     TYPE_CHOICES = [('random', 'Random'),('private', 'Private')]
-    STATUS_CHOICES = [('created', 'Created'),('playing', 'Playing'), ('waiting', 'Waiting')]
+    STATUS_CHOICES = [('created', 'Created'),('playing', 'Playing'), ('waiting', 'Waiting'), ('disabled', 'Disabled')]
     
     id = models.AutoField(primary_key=True)
+    channel_id = models.TextField(unique=True, null=False)
     
     user_1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rooms_as_user1')
     user_2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rooms_as_user2', null=True, blank=True)
