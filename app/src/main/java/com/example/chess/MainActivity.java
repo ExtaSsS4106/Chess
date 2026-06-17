@@ -35,9 +35,7 @@ public class MainActivity extends AppCompatActivity {
                 TextView userName = findViewById(R.id.user_name);
 
                 userName.setText(userData.getUsername());
-
                 loadActiveGame();
-
                 ImageButton home = findViewById(R.id.home_btn);
                 ImageButton requests = findViewById(R.id.req_btn);
                 ImageButton friends = findViewById(R.id.friends_btn);
@@ -76,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
                         Intent intent = new Intent(MainActivity.this, GameActivity.class);
                         intent.putExtra("room_id", ID);
                         startActivity(intent);
-                        finish();
                     });
                 }
             }
