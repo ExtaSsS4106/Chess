@@ -13,6 +13,9 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.activity.OnBackPressedCallback;
+import androidx.activity.OnBackPressedDispatcher;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.chess.api.endPoints;
@@ -62,6 +65,11 @@ public class GameActivity extends AppCompatActivity {
 
         client = new OkHttpClient();
         connectToWebSocket();
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+            }
+        });
 
         gameTable.post(new Runnable() {
             @Override
@@ -579,4 +587,5 @@ public class GameActivity extends AppCompatActivity {
                 }
         );
     }
+
 }
