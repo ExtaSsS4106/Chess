@@ -38,7 +38,7 @@ public class Pause {
         // Находим View
         TextView tvTitle = dialog.findViewById(R.id.pauseTitle);
         TextView tvMessage = dialog.findViewById(R.id.pauseMessage);
-        Button btnExit = dialog.findViewById(R.id.btnExit);
+        Button btnExit = dialog.findViewById(R.id.pausebtnExit);
 
         // Устанавливаем данные
         tvMessage.setText(message);
