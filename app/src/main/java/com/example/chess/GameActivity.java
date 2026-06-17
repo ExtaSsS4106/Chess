@@ -562,7 +562,6 @@ public class GameActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             new AlertDialog.Builder(this)
                     .setTitle("Превращение пешки")
-                    .setMessage("Выберите фигуру:")
                     .setItems(options, (dialog, which) ->
                     {
                         promotePawn(row, col, types[which]);
