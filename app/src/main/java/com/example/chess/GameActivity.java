@@ -167,7 +167,7 @@ public class GameActivity extends AppCompatActivity {
                                 case "check":
                                     updateBoardFromJson(desk);
                                     runOnUiThread(() -> {
-                                        Toast.makeText(GameActivity.this, json.optString("message"), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(GameActivity.this, message, Toast.LENGTH_SHORT).show();
                                     });
                                     break;
                                 case "playing":
