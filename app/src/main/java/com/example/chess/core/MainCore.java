@@ -32,19 +32,25 @@ public class MainCore {
         requests.metaGET(get, new Requests.ApiCallback() {
             @Override
             public void onSuccess(String response) {
-                JSONObject jsonResponse = null;
                 try {
-                    jsonResponse = new JSONObject(response);
-                    String ID = jsonResponse.optString("channel_id");
-
+                    JSONObject jsonResponse = new JSONObject(response);
+                    // Проверяем наличие channel_id и то, что он не пустой
+                    if (jsonResponse.has("channel_id") && !jsonResponse.isNull("channel_id")) {
+                        String ID = jsonResponse.getString("channel_id");
+                        if (!ID.isEmpty() && !ID.equals("null")) {
+                            callback.onSuccess(ID);
+                            return;
+                        }
+                    }
+                    callback.onSuccess(null);
                 } catch (JSONException e) {
-                    throw new RuntimeException(e);
+                    callback.onError("Ошибка парсинга: " + e.getMessage());
                 }
             }
 
             @Override
             public void onError(String error) {
-
+                callback.onError(error);
             }
         });
     }
