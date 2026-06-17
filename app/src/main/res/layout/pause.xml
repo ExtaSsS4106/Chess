@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_background"
+    android:padding="24dp"
+    android:elevation="8dp">
+
+    <!-- Заголовок -->
+    <TextView
+        android:id="@+id/pauseTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Игра приостановлена"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Иконка/эмодзи -->
+    <TextView
+        android:id="@+id/pauseIcon"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="⚠️"
+        android:textSize="64sp"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Сообщение -->
+    <TextView
+        android:id="@+id/pauseMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Соперник отключился"
+        android:textSize="18sp"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Дополнительная информация -->
+    <TextView
+        android:id="@+id/pauseStats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:gravity="center"
+        android:text="Если в течении 10 соперник не вернётся игра закончится автоматически"
+        android:textColor="#9DF20D0D"
+        android:textSize="14sp" />
+
+    <!-- Кнопка выхода -->
+    <Button
+        android:id="@+id/pausebtnExit"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Выйти"
+        android:textSize="16sp"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/button_primary"
+        android:padding="12dp"/>
+
+</LinearLayout>

@@ -22,6 +22,7 @@ import com.example.chess.api.Requests;
 import com.example.chess.api.endPoints;
 import com.example.chess.data.loadUser;
 import com.example.chess.gameCore.GameOverDialog;
+import com.example.chess.gameCore.Pause;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,7 +39,7 @@ import okhttp3.WebSocketListener;
 import androidx.appcompat.app.AlertDialog;
 
 public class GameActivity extends AppCompatActivity {
-
+    private AlertDialog pauseDialog = null;
     private boolean gameStop = false;
     private ImageView gameTable;
     private Bitmap boardBitmap;
@@ -138,6 +139,7 @@ public class GameActivity extends AppCompatActivity {
                             });
                             break;
                         case "start_game":
+                            gameStop = false;
                             runOnUiThread(() -> {
                                 Toast.makeText(GameActivity.this, "Игра началась!", Toast.LENGTH_SHORT).show();
                             });
@@ -176,12 +178,14 @@ public class GameActivity extends AppCompatActivity {
                                     updateBoardFromJson(desk);
                                     break;
                                 case "check":
+                                    gameStop = false;
                                     updateBoardFromJson(desk);
                                     runOnUiThread(() -> {
                                         Toast.makeText(GameActivity.this, message, Toast.LENGTH_SHORT).show();
                                     });
                                     break;
                                 case "playing":
+                                    gameStop = false;
                                     updateBoardFromJson(desk);
                                     break;
                                 default:
@@ -191,6 +195,23 @@ public class GameActivity extends AppCompatActivity {
                         case "waiting":
                             runOnUiThread(() -> {
                                 Toast.makeText(GameActivity.this, json.optString("message"), Toast.LENGTH_SHORT).show();
+                            });
+                            break;
+                        case "opponent_disconnected":
+                            String messDisconnected = json.optString("message");
+                            gameStop = true;
+                            runOnUiThread(() -> {
+                                showPauseDialog(messDisconnected);
+                            });
+                            break;
+                        case "opponent_reconnected":
+                            runOnUiThread(() -> {
+                                if (pauseDialog != null && pauseDialog.isShowing()) {
+                                    pauseDialog.dismiss();
+                                    pauseDialog = null;
+                                }
+                                gameStop = false;
+                                Toast.makeText(GameActivity.this, "Соперник вернулся!", Toast.LENGTH_SHORT).show();
                             });
                             break;
                         case "error":
@@ -638,6 +659,23 @@ public class GameActivity extends AppCompatActivity {
                     finish();
                 }
         );
+    }
+
+    private void showPauseDialog(String message) {
+        runOnUiThread(() -> {
+            if (pauseDialog != null && pauseDialog.isShowing()) {
+                pauseDialog.dismiss();
+                pauseDialog = null;
+            }
+            Pause.show(
+                    this,
+                    message,
+                    () -> {
+                        // Что делать при нажатии "Выйти"
+                        finish();
+                    }
+            );
+        });
     }
 
 }
