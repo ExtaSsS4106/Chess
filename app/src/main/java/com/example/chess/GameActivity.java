@@ -4,8 +4,11 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -14,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.chess.api.endPoints;
 import com.example.chess.data.loadUser;
+import com.example.chess.gameCore.GameOverDialog;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -30,6 +34,7 @@ import okhttp3.WebSocketListener;
 
 public class GameActivity extends AppCompatActivity {
 
+    private boolean gameStop = false;
     private ImageView gameTable;
     private Bitmap boardBitmap;
     private int cellWidth, cellHeight;
@@ -90,14 +95,27 @@ public class GameActivity extends AppCompatActivity {
                 try {
                     JSONObject json = new JSONObject(text);
                     String type = json.optString("type");
-
+                    JSONObject desk = null;
                     switch (type) {
+
                         case "connected":
                             isWhitePlayer = json.optBoolean("is_white", true);
+
+                            if (json.has("desck") && !json.isNull("desck")) {
+                                desk = json.getJSONObject("desck");
+                            }
+
+                            final JSONObject finalDesk = desk;  // для использования в runOnUiThread
                             runOnUiThread(() -> {
                                 String color = isWhitePlayer ? "белых" : "черных";
                                 Toast.makeText(GameActivity.this, "Вы играете за " + color, Toast.LENGTH_SHORT).show();
-                                drawAllPieces();
+                                if (finalDesk == null){
+                                    drawAllPieces();
+                                } else {
+                                    updateBoardFromJson(finalDesk);
+                                    getInfoFromServer();
+                                }
+
                             });
                             break;
                         case "start_game":
@@ -108,8 +126,46 @@ public class GameActivity extends AppCompatActivity {
                             // Для простоты, в вашей реализации Session.py, user_1 - создатель.
                             break;
                         case "opponent_move":
-                            JSONObject desk = json.getJSONObject("desck");
-                            updateBoardFromJson(desk);
+                            String status = json.optString("status");
+                            String winner = json.optString("winner");
+                            String message = json.optString("reason");
+                            int whitepiecesCount = json.optInt("white_pieces");
+                            int blackpiecesCount = json.optInt("black_pieces");
+                            if (json.has("desck") && !json.isNull("desck")) {
+                                desk = json.getJSONObject("desck");
+                            }
+                            switch (status) {
+                                case "checkmate":
+                                    gameStop = true;
+                                    runOnUiThread(() -> {
+                                        showGameOverDialog(status, winner, whitepiecesCount, blackpiecesCount, message);
+                                    });
+                                    updateBoardFromJson(desk);
+                                    break;
+                                case "draw":
+                                    gameStop = true;
+                                    runOnUiThread(() -> {
+                                        showGameOverDialog(status, winner, whitepiecesCount, blackpiecesCount, message);
+                                    });
+                                    updateBoardFromJson(desk);
+                                    break;
+                                case "stalemate":
+                                    gameStop = true;
+                                    runOnUiThread(() -> {
+                                        showGameOverDialog(status, winner, whitepiecesCount, blackpiecesCount, message);
+                                    });
+                                    updateBoardFromJson(desk);
+                                    break;
+                                case "check":
+                                    updateBoardFromJson(desk);
+                                    Toast.makeText(GameActivity.this, json.optString("message"), Toast.LENGTH_SHORT).show();
+                                    break;
+                                case "playing":
+                                    updateBoardFromJson(desk);
+                                    break;
+                                default:
+                                    throw new IllegalStateException("Unexpected value: " + status);
+                            }
                             break;
                         case "waiting":
                             runOnUiThread(() -> {
@@ -179,7 +235,7 @@ public class GameActivity extends AppCompatActivity {
                 grid.put(rowArray);
             }
             desk.put("grid", grid);
-            desk.put("isWhiteTurn", !isWhiteTurn); // Меняем ход после отправки
+
             return desk;
         } catch (JSONException e) {
             e.printStackTrace();
@@ -188,16 +244,35 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void sendBoardToServer() {
-        JSONObject desk = boardToJson();
-        if (desk != null && webSocket != null) {
-            webSocket.send(desk.toString());
+        try {
+            JSONObject desk = boardToJson();
+            if (desk != null && webSocket != null) {
+                desk.put("type", "save");
+                desk.put("isWhiteTurn", !isWhiteTurn);
+                webSocket.send(desk.toString());
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getInfoFromServer() {
+        try {
+            JSONObject desk = boardToJson();
+            if (desk != null && webSocket != null) {
+                desk.put("type", "getInfo");
+                desk.put("isWhiteTurn", isWhiteTurn);
+                webSocket.send(desk.toString());
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
     private void drawGrid() {
-        android.graphics.drawable.Drawable drawable = gameTable.getDrawable();
+        Drawable drawable = gameTable.getDrawable();
         if (drawable == null) return;
-        Bitmap originalBitmap = ((android.graphics.drawable.BitmapDrawable) drawable).getBitmap();
+        Bitmap originalBitmap = ((BitmapDrawable) drawable).getBitmap();
 
         boardBitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
         Canvas canvas = new Canvas(boardBitmap);
@@ -289,8 +364,8 @@ public class GameActivity extends AppCompatActivity {
     private void setupTouchListener() {
         gameTable.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public boolean onTouch(View v, android.view.MotionEvent event) {
-                if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     float x = event.getX();
                     float y = event.getY();
 
@@ -312,6 +387,9 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void handleCellClick(int row, int col) {
+        if (gameStop) {
+            return;
+        }
         // Проверка очереди хода
         if (isWhiteTurn != isWhitePlayer) {
             Toast.makeText(this, "Сейчас ход соперника", Toast.LENGTH_SHORT).show();
@@ -462,5 +540,41 @@ public class GameActivity extends AppCompatActivity {
         ChessPiece(String type, boolean isWhite, int row, int col) {
             this.type = type; this.isWhite = isWhite; this.row = row; this.col = col;
         }
+    }
+
+    private void showGameOverDialog(String status, String winner, int whitePieces, int blackPieces, String message) {
+        String title = "Игра окончена!";
+        String icon = "🏆";
+        String stats = "Белых: " + whitePieces + " | Черных: " + blackPieces;
+
+        switch (status) {
+            case "checkmate":
+                if ("white".equals(winner)) {
+                    icon = "🏆";
+                } else if ("black".equals(winner)) {
+                    icon = "🏆";
+                }
+                break;
+            case "draw":
+                icon = "🤝";
+                break;
+            case "stalemate":
+                icon = "🤝";
+                break;
+            default:
+                return;
+        }
+
+        GameOverDialog.show(
+                this,
+                title,
+                icon,
+                message,
+                stats,
+                () -> {
+                    // Что делать при нажатии "Выйти"
+                    finish();
+                }
+        );
     }
 }
