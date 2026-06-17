@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.example.chess.authorisation.LoginActivity;
+import com.example.chess.core.MainCore;
 import com.example.chess.main_fragments.friends_fragment;
 import com.example.chess.main_fragments.home_fragment;
 import com.example.chess.main_fragments.requests_fragment;
@@ -17,14 +18,16 @@ import com.example.chess.data.loadUser;
 import com.example.chess.data.loadUser.UserData;
 
 public class MainActivity extends AppCompatActivity {
-
+    private MainCore mainCore;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mainCore = new MainCore(this);
 
         try {
             loadUser loadUser = new loadUser();
             UserData userData = loadUser.loadUserData(this);
+
 
             if (userData != null) {
                 setContentView(R.layout.main);
@@ -62,7 +65,26 @@ public class MainActivity extends AppCompatActivity {
             finish();
         }
     }
+    private void loadActiveGame(){
+        mainCore.getChannelID(new MainCore.ChannelCallback() {
+            @Override
+            public void onSuccess(String ID) {
+                if (ID != null) {
+                    runOnUiThread(() -> {
+                        Intent intent = new Intent(MainActivity.this, GameActivity.class);
+                        intent.putExtra("room_id", ID);
+                        startActivity(intent);
+                        finish();
+                    });
+                }
+            }
 
+            @Override
+            public void onError(String error) {
+
+            }
+        });
+    }
     private void replaceFragment(Fragment fragment) {
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.content, fragment)

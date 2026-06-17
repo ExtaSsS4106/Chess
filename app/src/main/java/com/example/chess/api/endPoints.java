@@ -21,6 +21,7 @@ public class endPoints {
     //search game
     private String SEARCH_ROOM = "/mobile_api/search/game_start/";
     private String GAME_SESSION = "/mobile_api/session/";
+    private String ACTIVE_GAME = "/mobile_api/app_functional/active_game";
 
     //url
     public void setPORT(String port){
@@ -45,4 +46,5 @@ public class endPoints {
     public String getAPROOVE_REQUEST(){return this.APROOVE_REQUEST;}
     public String getSEARCH_ROOM(){return this.SEARCH_ROOM;}
     public String getGAME_SESSION(){return this.GAME_SESSION;}
+    public String getACTIVE_GAME(){return this.ACTIVE_GAME;}
 }
