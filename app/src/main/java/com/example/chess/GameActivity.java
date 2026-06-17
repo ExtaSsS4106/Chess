@@ -18,6 +18,7 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.activity.OnBackPressedDispatcher;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.chess.api.Requests;
 import com.example.chess.api.endPoints;
 import com.example.chess.data.loadUser;
 import com.example.chess.gameCore.GameOverDialog;
@@ -52,12 +53,21 @@ public class GameActivity extends AppCompatActivity {
     private WebSocket webSocket;
     private OkHttpClient client;
     private String roomId;
+    private Requests requests;
     private boolean isWhitePlayer = true; // Будет определено при подключении
     private boolean myTurn = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requests = new Requests(this);
+        requests.PingPong(new Requests.ApiCallback() {
+            @Override
+            public void onSuccess(String response) {}
+
+            @Override
+            public void onError(String error) {}
+        });
         setContentView(R.layout.game);
 
         gameTable = findViewById(R.id.gameTable);

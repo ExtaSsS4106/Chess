@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.chess.api.Requests;
 import com.example.chess.api.endPoints;
 import com.example.chess.data.loadUser;
 
@@ -29,10 +30,19 @@ public class Loading extends AppCompatActivity {
     private boolean isConnected = false;
     private TextView labelL;
     private Handler handler = new Handler();
+    private Requests requests;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requests = new Requests(this);
+        requests.PingPong(new Requests.ApiCallback() {
+            @Override
+            public void onSuccess(String response) {}
+
+            @Override
+            public void onError(String error) {}
+        });
         setContentView(R.layout.loading);
 
         endpoints = new endPoints();
