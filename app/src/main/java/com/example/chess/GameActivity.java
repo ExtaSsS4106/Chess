@@ -76,8 +76,7 @@ public class GameActivity extends AppCompatActivity {
         gameTable = findViewById(R.id.gameTable);
         roomId = getIntent().getStringExtra("room_id");
 
-        client = new OkHttpClient();
-        connectToWebSocket();
+
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -91,6 +90,9 @@ public class GameActivity extends AppCompatActivity {
                 initPieces();
                 drawAllPieces();
                 setupTouchListener();
+
+                client = new OkHttpClient();
+                connectToWebSocket();
             }
         });
     }
