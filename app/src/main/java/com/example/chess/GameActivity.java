@@ -35,6 +35,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
+import androidx.appcompat.app.AlertDialog;
 
 public class GameActivity extends AppCompatActivity {
 
@@ -545,6 +546,45 @@ public class GameActivity extends AppCompatActivity {
     private void movePiece(int fromRow, int fromCol, int toRow, int toCol) {
         pieces[toRow][toCol] = pieces[fromRow][fromCol];
         pieces[fromRow][fromCol] = null;
+        checkPawnPromotion(toRow, toCol);
+    }
+
+    private void checkPawnPromotion(int row, int col){
+        ChessPiece piece = pieces[row][col];
+        if (piece == null || !piece.type.equals("pawn")) return;
+        if ((piece.isWhite && row == 0) || (!piece.isWhite && row == 7)){
+            showPromotionDialog(row, col);
+        }
+    }
+    private void showPromotionDialog(int row, int col){
+        String[] options = {"♕ Ферзь", "♖ Ладья", "♗ Слон", "♘ Конь"};
+        String[] types = {"queen", "rook", "bishop", "knight"};
+
+        new AlertDialog.Builder(this)
+                .setTitle("Превращение пешки")
+                .setMessage("Выберите фигуру:")
+                .setItems(options, (dialog, which) ->
+                        {promotePawn(row, col, types[which]);
+                        })
+                .setCancelable(false)
+                .show();
+    }
+
+    private void promotePawn(int row, int col, String newType) {
+        ChessPiece piece = pieces[row][col];
+        if (piece != null) {
+            piece.type = newType;
+            drawAllPieces();
+
+            String name = "";
+            switch (newType) {
+                case "queen": name = "ферзя"; break;
+                case "rook": name = "ладья"; break;
+                case "bishop": name = "слона"; break;
+                case "knight": name = "коня"; break;
+            }
+            Toast.makeText(this, "Пешка превратилась в " + name + "!", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
