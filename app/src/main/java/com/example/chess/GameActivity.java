@@ -559,15 +559,17 @@ public class GameActivity extends AppCompatActivity {
     private void showPromotionDialog(int row, int col){
         String[] options = {"♕ Ферзь", "♖ Ладья", "♗ Слон", "♘ Конь"};
         String[] types = {"queen", "rook", "bishop", "knight"};
-
-        new AlertDialog.Builder(this)
-                .setTitle("Превращение пешки")
-                .setMessage("Выберите фигуру:")
-                .setItems(options, (dialog, which) ->
-                        {promotePawn(row, col, types[which]);
-                        })
-                .setCancelable(false)
-                .show();
+        runOnUiThread(() -> {
+            new AlertDialog.Builder(this)
+                    .setTitle("Превращение пешки")
+                    .setMessage("Выберите фигуру:")
+                    .setItems(options, (dialog, which) ->
+                    {
+                        promotePawn(row, col, types[which]);
+                    })
+                    .setCancelable(false)
+                    .show();
+        });
     }
 
     private void promotePawn(int row, int col, String newType) {
@@ -584,6 +586,7 @@ public class GameActivity extends AppCompatActivity {
                 case "knight": name = "коня"; break;
             }
             Toast.makeText(this, "Пешка превратилась в " + name + "!", Toast.LENGTH_SHORT).show();
+            sendBoardToServer();
         }
     }
 
