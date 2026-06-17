@@ -6,7 +6,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import AccessToken
 from mobile_api.models import Rooms
-
+from mobile_api.game_functional.core.analyze import ChessAnalyzer
 RECONNECT_TIMEOUT = 60  # сек на возвращение соперника
 
 
@@ -173,12 +173,33 @@ class Session(AsyncWebsocketConsumer):
 
     async def receive(self, text_data=None, bytes_data=None):
         if text_data is None: return
+        if not await self.chaeck_room(): return
         try:
             data = json.loads(text_data)
             await self.save_desk(data)
+            analyzer = ChessAnalyzer(data)
+            result = analyzer.analyze()
+            
+            if result['winner']:
+                await self.set_winner(result['winner'])
+                await self.disable_room()
+            if result['status'] == 'checkmate' \
+                or result['status'] == 'draw' \
+                or result['status'] == 'stalemate':
+                await self.disable_room()
+            
+            await self.set_info(result)
             await self.channel_layer.group_send(
                 self.room_group_name,
-                {
+                {   
+                    'status':result['status'],
+                    'winner':result['winner'],
+                    'reason':result['reason'],
+                    'white_pieces':result['white_pieces'],
+                    'black_pieces':result['black_pieces'],
+                    'is_white_turn':result['is_white_turn'],
+                    'king_in_check': result['king_in_check'],
+                    
                     'type': 'opponent_move',
                     'desck': data, 
                     'sender_id': self.user.id,
@@ -253,7 +274,45 @@ class Session(AsyncWebsocketConsumer):
     @database_sync_to_async
     def disable_room(self):
         Rooms.objects.filter(channel_id=self.channel_id).update(status='disabled')
+        
 
     @database_sync_to_async
     def save_desk(self, data):
         Rooms.objects.filter(channel_id=self.channel_id).update(data=data)
+        
+    @database_sync_to_async
+    def set_winner(self, color):
+        try:
+            room = Rooms.objects.get(channel_id=self.channel_id)
+        except Rooms.DoesNotExist:
+            return 
+        
+        if color == "white":
+            room.winner = room.user_1_id
+        elif color == "black":
+            room.winner = room.user_2_id
+        room.save()
+        
+    @database_sync_to_async
+    def chaeck_room(self):
+        try:
+            room = Rooms.objects.get(channel_id=self.channel_id)
+        except Exception as e:
+            print(f"[ERROR]: {e}")
+            return False
+        if room.status == 'disabled' or room.status == 'waiting':
+            return False
+        else:
+            return True
+    
+    @database_sync_to_async
+    def set_info(self, info):
+        if not info: return False
+        try:
+            room=Rooms.objects.get(channel_id=self.channel_id)
+            room.info = info
+            room.save()
+            return True
+        except Exception as e:
+            print(f"[ERROR]: {e}")
+            return False
