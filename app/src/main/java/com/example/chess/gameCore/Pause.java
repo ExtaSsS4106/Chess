@@ -13,7 +13,7 @@ import android.widget.TextView;
 import com.example.chess.R;
 
 public class Pause {
-    public static void show(
+    public static Dialog show(
             Context context,
             String message,
             Runnable onExit
@@ -52,5 +52,6 @@ public class Pause {
         });
 
         dialog.show();
+        return dialog;
     }
 }

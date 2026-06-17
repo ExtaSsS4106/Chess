@@ -36,10 +36,11 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
+import android.app.Dialog;
 import androidx.appcompat.app.AlertDialog;
 
 public class GameActivity extends AppCompatActivity {
-    private AlertDialog pauseDialog = null;
+    private Dialog pauseDialog = null;
     private boolean gameStop = false;
     private ImageView gameTable;
     private Bitmap boardBitmap;
@@ -667,7 +668,7 @@ public class GameActivity extends AppCompatActivity {
                 pauseDialog.dismiss();
                 pauseDialog = null;
             }
-            Pause.show(
+            pauseDialog = Pause.show(
                     this,
                     message,
                     () -> {
