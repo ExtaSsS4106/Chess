@@ -7,6 +7,8 @@ import org.json.JSONObject;
 import java.io.FileInputStream;
 
 public class loadUser {
+    private String FILE = "user_data.json";
+    public String getFILE(){return FILE;}
 
     public UserData loadUserData(Context context) {
         try {
@@ -37,6 +39,8 @@ public class loadUser {
         private String refresh;
         private String username;
         private String email;
+
+
 
         public UserData(String token, String refresh, String username, String email) {
             this.token = token;

@@ -23,6 +23,10 @@ public class endPoints {
     private String GAME_SESSION = "/mobile_api/session/";
     private String ACTIVE_GAME = "/mobile_api/app_functional/active_game";
 
+    private String PING_PONG = "/mobile_api/app_functional/ping";
+    private String REFRESH = "/mobile_api/app_functional/token/refresh";
+
+
     //url
     public void setPORT(String port){
         this.PORT = port;
@@ -30,6 +34,8 @@ public class endPoints {
     public void setIP(String ip){
         this.IP = ip;
     }
+    public String getREFRESH(){return REFRESH;}
+    public String getPING_PONG(){return PING_PONG;}
     public String getURL(){return this.URL;}
     public String getWS_URL(){return this.WS_URL;}
     //authorisation
