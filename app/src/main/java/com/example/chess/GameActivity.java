@@ -180,6 +180,7 @@ public class GameActivity extends AppCompatActivity {
                             // Для простоты, в вашей реализации Session.py, user_1 - создатель.
                             break;
                         case "give_up":
+                            Log.d("ACTION =+=++=+=+=+=+", type);
                             gameStop = true;
                             status = json.optString("status");
                             winner = json.optString("winner");
