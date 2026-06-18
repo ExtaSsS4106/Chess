@@ -16,7 +16,7 @@ import com.example.chess.main_fragments.home_fragment;
 import com.example.chess.main_fragments.requests_fragment;
 import com.example.chess.data.loadUser;
 import com.example.chess.data.loadUser.UserData;
-
+// 1
 public class MainActivity extends AppCompatActivity {
     private MainCore mainCore;
     @Override
