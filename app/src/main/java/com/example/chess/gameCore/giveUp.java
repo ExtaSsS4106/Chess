@@ -46,6 +46,13 @@ public class giveUp {
             }
         });
 
+        guCancel.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (onExit != null) {
+                onExit.run();
+            }
+        });
+
         dialog.show();
         return dialog;
     }
