@@ -134,6 +134,11 @@ public class GameActivity extends AppCompatActivity {
                     JSONObject json = new JSONObject(text);
                     String type = json.optString("type");
                     JSONObject desk = null;
+                    String status;
+                    String winner;
+                    String message;
+                    int whitepiecesCount;
+                    int blackpiecesCount;
                     switch (type) {
 
                         case "connected":
@@ -172,15 +177,22 @@ public class GameActivity extends AppCompatActivity {
                             // Сервер может прислать кто мы. Пока предположим Player 1 = White.
                             // Для простоты, в вашей реализации Session.py, user_1 - создатель.
                             break;
-                        case "info":
-
+                        case "give_up":
+                            status = json.optString("status");
+                            winner = json.optString("winner");
+                            message = json.optString("reason");
+                            whitepiecesCount = json.optInt("white_pieces");
+                            blackpiecesCount = json.optInt("black_pieces");
+                            runOnUiThread(() -> {
+                                showGameOverDialog(status, winner, whitepiecesCount, blackpiecesCount, message);
+                            });
                             break;
                         case "opponent_move":
-                            String status = json.optString("status");
-                            String winner = json.optString("winner");
-                            String message = json.optString("reason");
-                            int whitepiecesCount = json.optInt("white_pieces");
-                            int blackpiecesCount = json.optInt("black_pieces");
+                            status = json.optString("status");
+                            winner = json.optString("winner");
+                            message = json.optString("reason");
+                            whitepiecesCount = json.optInt("white_pieces");
+                            blackpiecesCount = json.optInt("black_pieces");
                             if (json.has("desck") && !json.isNull("desck")) {
                                 desk = json.getJSONObject("desck");
                             }
