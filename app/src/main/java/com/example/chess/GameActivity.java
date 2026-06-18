@@ -101,7 +101,6 @@ public class GameActivity extends AppCompatActivity {
 
             }
         });
-        getInfoFromServer();
     }
 
     private void connectToWebSocket() {
@@ -116,6 +115,7 @@ public class GameActivity extends AppCompatActivity {
         webSocket = client.newWebSocket(request, new WebSocketListener() {
             @Override
             public void onOpen(WebSocket webSocket, Response response) {
+
                 Log.d("GameSession", "Connected to game session");
             }
 
@@ -134,29 +134,6 @@ public class GameActivity extends AppCompatActivity {
                             if (json.has("desck") && !json.isNull("desck")) {
                                 desk = json.getJSONObject("desck");
                             }
-
-                            final JSONObject finalDesk = desk;  // для использования в runOnUiThread
-                            runOnUiThread(() -> {
-                                String color = isWhitePlayer ? "белых" : "черных";
-                                Toast.makeText(GameActivity.this, "Вы играете за " + color, Toast.LENGTH_SHORT).show();
-                                if (finalDesk == null){
-                                    drawAllPieces();
-                                } else {
-                                    updateBoardFromJson(finalDesk);
-                                    getInfoFromServer();
-                                }
-
-                            });
-                            break;
-                        case "start_game":
-                            gameStop = false;
-                            runOnUiThread(() -> {
-                                Toast.makeText(GameActivity.this, "Игра началась!", Toast.LENGTH_SHORT).show();
-                            });
-                            // Сервер может прислать кто мы. Пока предположим Player 1 = White.
-                            // Для простоты, в вашей реализации Session.py, user_1 - создатель.
-                            break;
-                        case "info":
                             String user1 = json.optString("user1");
                             String user2 = json.optString("user2");
                             runOnUiThread(() -> {
@@ -168,6 +145,27 @@ public class GameActivity extends AppCompatActivity {
                                     name_p1_g.setText(user2);
                                 }
                             });
+                            final JSONObject finalDesk = desk;  // для использования в runOnUiThread
+                            runOnUiThread(() -> {
+                                String color = isWhitePlayer ? "белых" : "черных";
+                                Toast.makeText(GameActivity.this, "Вы играете за " + color, Toast.LENGTH_SHORT).show();
+                                if (finalDesk == null){
+                                    drawAllPieces();
+                                } else {
+                                    updateBoardFromJson(finalDesk);
+                                }
+                            });
+                            break;
+                        case "start_game":
+                            gameStop = false;
+                            runOnUiThread(() -> {
+                                Toast.makeText(GameActivity.this, "Игра началась!", Toast.LENGTH_SHORT).show();
+                            });
+                            // Сервер может прислать кто мы. Пока предположим Player 1 = White.
+                            // Для простоты, в вашей реализации Session.py, user_1 - создатель.
+                            break;
+                        case "info":
+
                             break;
                         case "opponent_move":
                             String status = json.optString("status");
