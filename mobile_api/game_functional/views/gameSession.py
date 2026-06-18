@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import AccessToken
 from mobile_api.models import Rooms
 from mobile_api.game_functional.core.analyze import ChessAnalyzer
-RECONNECT_TIMEOUT = 60  # сек на возвращение соперника
+RECONNECT_TIMEOUT = 600  # сек на возвращение соперника
 
 
 class Session(AsyncWebsocketConsumer):
@@ -40,8 +40,15 @@ class Session(AsyncWebsocketConsumer):
         room = await self.add_user_and_get_room()
 
         is_white = room.user_1_id == self.user.id 
+        
+        desck = await self.get_desk()
+        
+        usr1, usr2 = await self.get_players()
 
         await self.send(text_data=json.dumps({
+            'user1': usr1,
+            'user2': usr2,
+            'desck': desck,
             'type': 'connected',
             'is_white': is_white,
             'message': 'Вы подключены к игре'
@@ -55,7 +62,7 @@ class Session(AsyncWebsocketConsumer):
             }
         )
 
-        if room.user_1 == self.user:
+        if room.user_1_id == self.user.id:
             await self.send(text_data=json.dumps({
                 'type': 'waiting',
                 'message': 'Ожидание соперника...'
@@ -63,7 +70,7 @@ class Session(AsyncWebsocketConsumer):
             if room.user_2_in:
                 await self.start_game_for_both()
 
-        elif room.user_2 == self.user:
+        elif room.user_2_id == self.user.id:
             await self.send(text_data=json.dumps({
                 'type': 'waiting',
                 'message': 'Ожидание соперника...'
@@ -86,7 +93,9 @@ class Session(AsyncWebsocketConsumer):
             await self.disable_room()
             print(f"Комната {self.channel_id} отключена: оба игрока вышли")
         else:
-            await self.set_room_waiting()
+            if self.room_is_on():
+                await self.set_room_waiting()
+            
 
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -142,11 +151,18 @@ class Session(AsyncWebsocketConsumer):
             }))
 
     async def opponent_move(self, event):
-        if event['sender_id'] == self.user.id:
-            return
+        """if event['sender_id'] == self.user.id:
+            return"""
         await self.send(text_data=json.dumps({
             'type': 'opponent_move',
             'desck': event['desck'],
+            'status': event.get('status', ''),          
+            'winner': event.get('winner'),              
+            'reason': event.get('reason'),              
+            'white_pieces': event.get('white_pieces'),  
+            'black_pieces': event.get('black_pieces'),  
+            'is_white_turn': event.get('is_white_turn'),
+            'king_in_check': event.get('king_in_check'),
         }))
 
     # === Таймер ожидания соперника ===
@@ -173,9 +189,10 @@ class Session(AsyncWebsocketConsumer):
 
     async def receive(self, text_data=None, bytes_data=None):
         if text_data is None: return
-        if not await self.chaeck_room(): return
+        if not await self.check_room(): return
         try:
             data = json.loads(text_data)
+            message_type = data['type']
             await self.save_desk(data)
             analyzer = ChessAnalyzer(data)
             result = analyzer.analyze()
@@ -189,22 +206,36 @@ class Session(AsyncWebsocketConsumer):
                 await self.disable_room()
             
             await self.set_info(result)
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {   
-                    'status':result['status'],
-                    'winner':result['winner'],
-                    'reason':result['reason'],
-                    'white_pieces':result['white_pieces'],
-                    'black_pieces':result['black_pieces'],
-                    'is_white_turn':result['is_white_turn'],
-                    'king_in_check': result['king_in_check'],
-                    
-                    'type': 'opponent_move',
-                    'desck': data, 
-                    'sender_id': self.user.id,
-                }
-            )
+            if message_type == 'getInfo':
+                await self.send(text_data=json.dumps(
+                    {   
+                        'type': 'info',
+                        'status':result['status'],
+                        'winner':result['winner'],
+                        'reason':result['reason'],
+                        'white_pieces':result['white_pieces'],
+                        'black_pieces':result['black_pieces'],
+                        'is_white_turn':result['is_white_turn'],
+                        'king_in_check': result['king_in_check'],
+                    }
+                ))
+            elif message_type == 'save':
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {   
+                        'status':result['status'],
+                        'winner':result['winner'],
+                        'reason':result['reason'],
+                        'white_pieces':result['white_pieces'],
+                        'black_pieces':result['black_pieces'],
+                        'is_white_turn':result['is_white_turn'],
+                        'king_in_check': result['king_in_check'],
+                        
+                        'type': 'opponent_move',
+                        'desck': data, 
+                        'sender_id': self.user.id,
+                    }
+                )
         except Exception as e:
             print(f"Error: {e}")
     # === Вспомогательные методы ===
@@ -279,7 +310,18 @@ class Session(AsyncWebsocketConsumer):
     @database_sync_to_async
     def save_desk(self, data):
         Rooms.objects.filter(channel_id=self.channel_id).update(data=data)
-        
+    
+    @database_sync_to_async
+    def get_desk(self):
+        try:
+            room = Rooms.objects.get(channel_id=self.channel_id)
+            if room.data:
+                return room.data
+            else:
+                return None
+        except Exception as e:
+            print(f"[ERROR]: {e}")
+            return None
     @database_sync_to_async
     def set_winner(self, color):
         try:
@@ -288,13 +330,13 @@ class Session(AsyncWebsocketConsumer):
             return 
         
         if color == "white":
-            room.winner = room.user_1_id
+            room.winner = room.user_1
         elif color == "black":
-            room.winner = room.user_2_id
+            room.winner = room.user_2
         room.save()
         
     @database_sync_to_async
-    def chaeck_room(self):
+    def check_room(self):
         try:
             room = Rooms.objects.get(channel_id=self.channel_id)
         except Exception as e:
@@ -316,3 +358,26 @@ class Session(AsyncWebsocketConsumer):
         except Exception as e:
             print(f"[ERROR]: {e}")
             return False
+        
+    @database_sync_to_async
+    def room_is_on(self):
+        try:
+            room = Rooms.objects.get(channel_id=self.channel_id)
+            if room.status == "disabled":
+                return False
+            else:
+                return True
+        except Exception as e:
+            print(f"[ERROR]: {e}")
+            return False
+        
+    @database_sync_to_async
+    def get_players(self):
+        try:
+            room = Rooms.objects.get(channel_id=self.channel_id)
+            usr1 = room.user_1.username
+            usr2 = room.user_2.username
+            return usr1, usr2
+        except Exception as e:
+            print(f"[ERROR]: {e}")
+            return None

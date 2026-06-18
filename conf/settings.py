@@ -66,7 +66,7 @@ from datetime import timedelta
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=3),   # access-токен 
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),      # refresh-токен живёт 1 день
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),      # refresh-токен живёт n дней
     'ROTATE_REFRESH_TOKENS': True,                    # при обновлении выдавать новый refresh
     'BLACKLIST_AFTER_ROTATION': True,                 # старый refresh в чёрный список
     'AUTH_HEADER_TYPES': ('Bearer',),                 # заголовок: Authorization: Bearer <токен>

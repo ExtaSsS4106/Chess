@@ -10,7 +10,22 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from mobile_api.models import Rooms, Requests, Friends
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+
 import uuid
+from django.db.models import Q
+
+class ActiveGame(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    def get(self, request):
+        user = request.user
+        room = Rooms.objects.filter(
+            Q(user_1=user) | Q(user_2=user)
+        ).exclude(status='disabled').first()
+        
+        channel_id = room.channel_id if room else None
+        return Response({"channel_id": channel_id}, status=status.HTTP_200_OK)
 
 class GameConsumer(AsyncWebsocketConsumer):
     searching: bool = True
