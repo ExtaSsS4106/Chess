@@ -222,7 +222,7 @@ public class GameActivity extends AppCompatActivity {
                         case "opponent_disconnected":
                             String messDisconnected = json.optString("message");
                             gameStop = true;
-                            if (gameOverDiaolg == null && !gameOverDiaolg.isShowing()) {
+                            if (gameOverDiaolg == null || !gameOverDiaolg.isShowing()) {
                                 runOnUiThread(() -> {
                                     showPauseDialog(messDisconnected);
                                 });
@@ -230,7 +230,7 @@ public class GameActivity extends AppCompatActivity {
                             break;
                         case "opponent_reconnected":
                             runOnUiThread(() -> {
-                                if (pauseDialog != null && pauseDialog.isShowing()) {
+                                if (pauseDialog != null || pauseDialog.isShowing()) {
                                     pauseDialog.dismiss();
                                     pauseDialog = null;
                                 }
