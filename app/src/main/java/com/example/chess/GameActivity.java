@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,7 +24,7 @@ import com.example.chess.api.endPoints;
 import com.example.chess.data.loadUser;
 import com.example.chess.gameCore.GameOverDialog;
 import com.example.chess.gameCore.Pause;
-
+import com.example.chess.gameCore.giveUp;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,9 +42,11 @@ import androidx.appcompat.app.AlertDialog;
 
 public class GameActivity extends AppCompatActivity {
     private Dialog pauseDialog = null;
+    private Dialog giveup = null;
     private Dialog gameOverDiaolg = null;
     private boolean gameStop = false;
     private ImageView gameTable;
+    private ImageButton flagButton;
     private Bitmap boardBitmap;
     private TextView name_p1_g;
     private TextView name_p2_g;
@@ -79,6 +82,8 @@ public class GameActivity extends AppCompatActivity {
         name_p1_g = findViewById(R.id.name_p1_g);
         name_p2_g = findViewById(R.id.name_p2_g);
 
+        flagButton = findViewById(R.id.flagButton);
+
         gameTable = findViewById(R.id.gameTable);
         roomId = getIntent().getStringExtra("room_id");
 
@@ -102,6 +107,8 @@ public class GameActivity extends AppCompatActivity {
 
             }
         });
+
+        flagButton.setOnClickListener(v ->showGiveUpDialog());
     }
 
     private void connectToWebSocket() {
@@ -322,18 +329,7 @@ public class GameActivity extends AppCompatActivity {
         }
     }
 
-    private void getInfoFromServer() {
-        try {
-            JSONObject desk = boardToJson();
-            if (desk != null && webSocket != null) {
-                desk.put("type", "getInfo");
-                desk.put("isWhiteTurn", isWhiteTurn);
-                webSocket.send(desk.toString());
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
+
 
     private void drawGrid() {
         Drawable drawable = gameTable.getDrawable();
@@ -696,6 +692,30 @@ public class GameActivity extends AppCompatActivity {
                     message,
                     () -> {
                         // Что делать при нажатии "Выйти"
+                        finish();
+                    }
+            );
+        });
+    }
+
+    private void showGiveUpDialog() {
+        runOnUiThread(() -> {
+            if (giveup != null && giveup.isShowing()) {
+                giveup.dismiss();
+                giveup = null;
+            }
+            giveup = giveUp.show(
+                    this,
+                    () -> {
+                        try {
+                            JSONObject desk = boardToJson();
+                            if (desk != null && webSocket != null) {
+                                desk.put("type", "give_up");
+                                webSocket.send(desk.toString());
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                         finish();
                     }
             );

@@ -59,18 +59,6 @@
         app:layout_constraintEnd_toEndOf="@+id/p2_g"
         app:layout_constraintTop_toTopOf="@+id/p2_g" />
 
-    <TextView
-        android:id="@+id/timer_p2_g"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:text="01:30"
-        android:textColor="#F6F6F6"
-        android:textSize="34sp"
-        app:layout_constraintBottom_toBottomOf="@+id/p2_g"
-        app:layout_constraintStart_toStartOf="@+id/p2_g"
-        app:layout_constraintTop_toTopOf="@+id/p2_g" />
-
     <!-- Шахматная доска -->
     <ImageView
         android:id="@+id/gameTable"
@@ -106,18 +94,6 @@
         android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="@+id/p1_g"
         app:layout_constraintEnd_toEndOf="@+id/p1_g"
-        app:layout_constraintTop_toTopOf="@+id/p1_g" />
-
-    <TextView
-        android:id="@+id/timer_p1_g"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:text="01:30"
-        android:textColor="#F6F6F6"
-        android:textSize="34sp"
-        app:layout_constraintBottom_toBottomOf="@+id/p1_g"
-        app:layout_constraintStart_toStartOf="@+id/p1_g"
         app:layout_constraintTop_toTopOf="@+id/p1_g" />
 
 </androidx.constraintlayout.motion.widget.MotionLayout>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_background"
+    android:padding="24dp"
+    android:elevation="8dp">
+
+    <!-- Заголовок -->
+    <TextView
+        android:id="@+id/guTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Вы действитеьно хотите сдаться?"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Иконка/эмодзи -->
+    <TextView
+        android:id="@+id/guIcon"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🏳️"
+        android:textSize="64sp"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"/>
+
+
+    <!-- Дополнительная информация -->
+    <TextView
+        android:id="@+id/guStats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Если вы сдадитесь, победу заберёт противник."
+        android:textSize="14sp"
+        android:textColor="#AAAAAA"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Кнопка выхода -->
+
+    <Button
+        android:id="@+id/gubtnExit"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/red_btn"
+        android:padding="12dp"
+        android:text="Выйти"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/guCancel"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:background="@drawable/button_primary"
+        android:padding="12dp"
+        android:text="Вернуться"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp" />
+</LinearLayout>
