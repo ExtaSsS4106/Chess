@@ -180,7 +180,6 @@ public class GameActivity extends AppCompatActivity {
                             // Для простоты, в вашей реализации Session.py, user_1 - создатель.
                             break;
                         case "give_up":
-                            Log.d("ACTION =+=++=+=+=+=+", type);
                             gameStop = true;
                             status = json.optString("status");
                             winner = json.optString("winner");
@@ -679,6 +678,9 @@ public class GameActivity extends AppCompatActivity {
                 break;
             case "stalemate":
                 icon = "🤝";
+                break;
+            case "give_up":
+                icon = "\uD83C\uDFF3\uFE0F";
                 break;
             default:
                 return;
