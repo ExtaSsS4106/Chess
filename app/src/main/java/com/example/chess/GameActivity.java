@@ -178,6 +178,7 @@ public class GameActivity extends AppCompatActivity {
                             // Для простоты, в вашей реализации Session.py, user_1 - создатель.
                             break;
                         case "give_up":
+                            gameStop = true;
                             status = json.optString("status");
                             winner = json.optString("winner");
                             message = json.optString("reason");
@@ -723,10 +724,12 @@ public class GameActivity extends AppCompatActivity {
                             JSONObject json = new JSONObject();
                             json.put("type", "give_up");
                             webSocket.send(json.toString());
+                            new android.os.Handler().postDelayed(() -> {
+                                finish();
+                            }, 500);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
-                        finish();
                     }
             );
         });
