@@ -159,13 +159,15 @@ public class GameActivity extends AppCompatActivity {
                         case "info":
                             String user1 = json.optString("user1");
                             String user2 = json.optString("user2");
-                            if (isWhitePlayer){
-                                name_p1_g.setText(user1);
-                                name_p2_g.setText(user2);
-                            }else{
-                                name_p2_g.setText(user1);
-                                name_p1_g.setText(user2);
-                            }
+                            runOnUiThread(() -> {
+                                if (isWhitePlayer){
+                                    name_p1_g.setText(user1);
+                                    name_p2_g.setText(user2);
+                                } else {
+                                    name_p2_g.setText(user1);
+                                    name_p1_g.setText(user2);
+                                }
+                            });
                             break;
                         case "opponent_move":
                             String status = json.optString("status");
