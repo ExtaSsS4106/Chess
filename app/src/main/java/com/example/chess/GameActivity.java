@@ -708,11 +708,9 @@ public class GameActivity extends AppCompatActivity {
                     this,
                     () -> {
                         try {
-                            JSONObject desk = boardToJson();
-                            if (desk != null && webSocket != null) {
-                                desk.put("type", "give_up");
-                                webSocket.send(desk.toString());
-                            }
+                            JSONObject json = new JSONObject();
+                            json.put("type", "give_up");
+                            webSocket.send(json.toString());
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
