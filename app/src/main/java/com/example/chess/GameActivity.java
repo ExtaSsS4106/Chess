@@ -41,6 +41,7 @@ import androidx.appcompat.app.AlertDialog;
 
 public class GameActivity extends AppCompatActivity {
     private Dialog pauseDialog = null;
+    private Dialog gameOverDiaolg = null;
     private boolean gameStop = false;
     private ImageView gameTable;
     private Bitmap boardBitmap;
@@ -221,9 +222,11 @@ public class GameActivity extends AppCompatActivity {
                         case "opponent_disconnected":
                             String messDisconnected = json.optString("message");
                             gameStop = true;
-                            runOnUiThread(() -> {
-                                showPauseDialog(messDisconnected);
-                            });
+                            if (gameOverDiaolg == null && !gameOverDiaolg.isShowing()) {
+                                runOnUiThread(() -> {
+                                    showPauseDialog(messDisconnected);
+                                });
+                            }
                             break;
                         case "opponent_reconnected":
                             runOnUiThread(() -> {
@@ -669,7 +672,7 @@ public class GameActivity extends AppCompatActivity {
                 return;
         }
 
-        GameOverDialog.show(
+        gameOverDiaolg = GameOverDialog.show(
                 this,
                 title,
                 icon,

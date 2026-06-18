@@ -47,7 +47,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="24dp"
         android:gravity="center"
-        android:text="Если в течении 10 соперник не вернётся игра закончится автоматически"
+        android:text="Если в течении 10 минут соперник не вернётся игра закончится автоматически"
         android:textColor="#9DF20D0D"
         android:textSize="14sp" />
 

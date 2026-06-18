@@ -14,7 +14,7 @@ import com.example.chess.R;
 
 public class GameOverDialog {
 
-    public static void show(
+    public static Dialog show(
             Context context,
             String title,
             String icon,
@@ -61,5 +61,6 @@ public class GameOverDialog {
         });
 
         dialog.show();
+        return dialog;
     }
 }
