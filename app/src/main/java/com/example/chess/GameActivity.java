@@ -98,6 +98,7 @@ public class GameActivity extends AppCompatActivity {
 
                 client = new OkHttpClient();
                 connectToWebSocket();
+                getInfoFromServer();
             }
         });
     }
