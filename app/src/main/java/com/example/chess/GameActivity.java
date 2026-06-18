@@ -724,11 +724,15 @@ public class GameActivity extends AppCompatActivity {
                             JSONObject json = new JSONObject();
                             json.put("type", "give_up");
                             webSocket.send(json.toString());
+                            if (webSocket != null) {
+                                webSocket.close(1000, "Give up");
+                            }
                             new android.os.Handler().postDelayed(() -> {
                                 finish();
                             }, 500);
                         } catch (JSONException e) {
                             e.printStackTrace();
+                            finish();
                         }
                     }
             );
