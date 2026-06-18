@@ -44,6 +44,8 @@ public class GameActivity extends AppCompatActivity {
     private boolean gameStop = false;
     private ImageView gameTable;
     private Bitmap boardBitmap;
+    private TextView name_p1_g;
+    private TextView name_p2_g;
     private int cellWidth, cellHeight;
     private int boardWidth, boardHeight;
 
@@ -72,6 +74,9 @@ public class GameActivity extends AppCompatActivity {
             public void onError(String error) {}
         });
         setContentView(R.layout.game);
+
+        name_p1_g = findViewById(R.id.name_p1_g);
+        name_p2_g = findViewById(R.id.name_p2_g);
 
         gameTable = findViewById(R.id.gameTable);
         roomId = getIntent().getStringExtra("room_id");
@@ -148,6 +153,17 @@ public class GameActivity extends AppCompatActivity {
                             });
                             // Сервер может прислать кто мы. Пока предположим Player 1 = White.
                             // Для простоты, в вашей реализации Session.py, user_1 - создатель.
+                            break;
+                        case "info":
+                            String user1 = json.optString("user1");
+                            String user2 = json.optString("user2");
+                            if (isWhitePlayer){
+                                name_p1_g.setText(user1);
+                                name_p2_g.setText(user2);
+                            }else{
+                                name_p2_g.setText(user1);
+                                name_p1_g.setText(user2);
+                            }
                             break;
                         case "opponent_move":
                             String status = json.optString("status");
