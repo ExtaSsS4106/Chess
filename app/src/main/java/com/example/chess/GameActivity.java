@@ -463,6 +463,115 @@ public class GameActivity extends AppCompatActivity {
         });
     }
 
+    // ========== НОВЫЕ МЕТОДЫ ДЛЯ ЗАЩИТЫ КОРОЛЯ ==========
+
+    private boolean isInCheck(boolean isWhite) {
+        // Находим позицию короля
+        int kingRow = -1, kingCol = -1;
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                if (pieces[r][c] != null &&
+                        pieces[r][c].type.equals("king") &&
+                        pieces[r][c].isWhite == isWhite) {
+                    kingRow = r;
+                    kingCol = c;
+                    break;
+                }
+            }
+            if (kingRow != -1) break;
+        }
+
+        if (kingRow == -1) return true; // Король съеден
+
+        // Проверяем, может ли какая-либо фигура противника съесть короля
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                ChessPiece piece = pieces[r][c];
+                if (piece != null && piece.isWhite != isWhite) {
+                    if (canPieceAttack(r, c, kingRow, kingCol)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean canPieceAttack(int fromRow, int fromCol, int toRow, int toCol) {
+        ChessPiece piece = pieces[fromRow][fromCol];
+        if (piece == null) return false;
+
+        // Сохраняем целевую фигуру
+        ChessPiece target = pieces[toRow][toCol];
+        pieces[toRow][toCol] = null;
+
+        boolean canAttack = false;
+        List<int[]> moves = getPossibleMovesWithoutKingCheck(fromRow, fromCol);
+        for (int[] m : moves) {
+            if (m[0] == toRow && m[1] == toCol) {
+                canAttack = true;
+                break;
+            }
+        }
+
+        // Восстанавливаем целевую фигуру
+        pieces[toRow][toCol] = target;
+        return canAttack;
+    }
+
+    private List<int[]> getPossibleMovesWithoutKingCheck(int row, int col) {
+        ChessPiece piece = pieces[row][col];
+        if (piece == null) return new ArrayList<>();
+        List<int[]> moves = new ArrayList<>();
+        switch (piece.type) {
+            case "pawn": getPawnMoves(row, col, piece.isWhite, moves); break;
+            case "rook": getRookMoves(row, col, piece.isWhite, moves); break;
+            case "knight": getKnightMoves(row, col, piece.isWhite, moves); break;
+            case "bishop": getBishopMoves(row, col, piece.isWhite, moves); break;
+            case "queen": getQueenMoves(row, col, piece.isWhite, moves); break;
+            case "king": getKingMoves(row, col, piece.isWhite, moves); break;
+        }
+        return moves;
+    }
+
+    private boolean isValidMove(int fromRow, int fromCol, int toRow, int toCol) {
+        ChessPiece piece = pieces[fromRow][fromCol];
+        if (piece == null) return false;
+
+        // Проверяем, что ход возможен по правилам фигуры
+        List<int[]> moves = getPossibleMovesWithoutKingCheck(fromRow, fromCol);
+        boolean canMove = false;
+        for (int[] m : moves) {
+            if (m[0] == toRow && m[1] == toCol) {
+                canMove = true;
+                break;
+            }
+        }
+        if (!canMove) return false;
+
+        // Проверяем, не съедаем ли мы короля
+        ChessPiece target = pieces[toRow][toCol];
+        if (target != null && target.type.equals("king")) {
+            return false; // Запрещаем съедать короля
+        }
+
+        // Симулируем ход
+        ChessPiece captured = pieces[toRow][toCol];
+        pieces[toRow][toCol] = piece;
+        pieces[fromRow][fromCol] = null;
+
+        // Проверяем, не подставляет ли этот ход своего короля под шах
+        boolean putsKingInCheck = isInCheck(piece.isWhite);
+
+        // Отменяем ход
+        pieces[fromRow][fromCol] = piece;
+        pieces[toRow][toCol] = captured;
+
+        return !putsKingInCheck;
+    }
+
+    // ========== КОНЕЦ НОВЫХ МЕТОДОВ ==========
+
     private void handleCellClick(int row, int col) {
         if (gameStop) {
             return;
@@ -484,6 +593,17 @@ public class GameActivity extends AppCompatActivity {
             }
         } else {
             if (isValidMove(selectedRow, selectedCol, row, col)) {
+                // Проверяем, не съедаем ли мы короля (дополнительная проверка)
+                ChessPiece targetPiece = pieces[row][col];
+                if (targetPiece != null && targetPiece.type.equals("king")) {
+                    Toast.makeText(this, "Нельзя съесть короля!", Toast.LENGTH_SHORT).show();
+                    selectedPiece = null;
+                    selectedRow = -1;
+                    selectedCol = -1;
+                    drawAllPieces();
+                    return;
+                }
+
                 movePiece(selectedRow, selectedCol, row, col);
                 sendBoardToServer(); // Отправляем состояние после хода
                 selectedPiece = null;
@@ -491,6 +611,11 @@ public class GameActivity extends AppCompatActivity {
                 selectedCol = -1;
                 isWhiteTurn = !isWhiteTurn;
                 drawAllPieces();
+
+                // Проверяем, не находится ли король противника под шахом
+                if (isInCheck(!isWhitePlayer)) {
+                    Toast.makeText(this, "Шах!", Toast.LENGTH_SHORT).show();
+                }
             } else {
                 selectedPiece = null;
                 drawAllPieces();
@@ -508,7 +633,16 @@ public class GameActivity extends AppCompatActivity {
             }
         }
 
-        List<int[]> moves = getPossibleMoves(row, col);
+        List<int[]> moves = new ArrayList<>();
+        // Добавляем только допустимые ходы (с проверкой на шах)
+        for (int r = 0; r < 8; r++) {
+            for (int c = 0; c < 8; c++) {
+                if (isValidMove(row, col, r, c)) {
+                    moves.add(new int[]{r, c});
+                }
+            }
+        }
+
         Paint movePaint = new Paint();
         movePaint.setColor(Color.argb(150, 0, 255, 0));
 
@@ -530,18 +664,8 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private List<int[]> getPossibleMoves(int row, int col) {
-        ChessPiece piece = pieces[row][col];
-        if (piece == null) return new ArrayList<>();
-        List<int[]> moves = new ArrayList<>();
-        switch (piece.type) {
-            case "pawn": getPawnMoves(row, col, piece.isWhite, moves); break;
-            case "rook": getRookMoves(row, col, piece.isWhite, moves); break;
-            case "knight": getKnightMoves(row, col, piece.isWhite, moves); break;
-            case "bishop": getBishopMoves(row, col, piece.isWhite, moves); break;
-            case "queen": getQueenMoves(row, col, piece.isWhite, moves); break;
-            case "king": getKingMoves(row, col, piece.isWhite, moves); break;
-        }
-        return moves;
+        // Этот метод оставлен для совместимости, но теперь используем getPossibleMovesWithoutKingCheck
+        return getPossibleMovesWithoutKingCheck(row, col);
     }
 
     private void getPawnMoves(int row, int col, boolean isWhite, List<int[]> moves) {
@@ -591,12 +715,6 @@ public class GameActivity extends AppCompatActivity {
             int r = row + dr, c = col + dc;
             if (r >= 0 && r < 8 && c >= 0 && c < 8 && (pieces[r][c] == null || pieces[r][c].isWhite != isWhite)) moves.add(new int[]{r, c});
         }
-    }
-
-    private boolean isValidMove(int fromRow, int fromCol, int toRow, int toCol) {
-        List<int[]> moves = getPossibleMoves(fromRow, fromCol);
-        for (int[] m : moves) if (m[0] == toRow && m[1] == toCol) return true;
-        return false;
     }
 
     private void movePiece(int fromRow, int fromCol, int toRow, int toCol) {
