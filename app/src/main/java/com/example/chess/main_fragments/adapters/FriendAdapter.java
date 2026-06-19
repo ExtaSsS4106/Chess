@@ -99,10 +99,6 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
                                         lobbyHash
                                 );
 
-                                intent.putExtra(
-                                        "requestId",
-                                        requestId
-                                );
 
                                 context.startActivity(intent);
                             }

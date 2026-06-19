@@ -20,6 +20,7 @@ public class RequestsCore {
     private String cancel;
     private String aproove;
     private String add_friend;
+    private String join_fr;
     private Requests requests;
     private Context context;
     private endPoints endPoints;
@@ -51,7 +52,8 @@ public class RequestsCore {
                             JSONObject USER_FROM = reqdObj.getJSONObject("user_from");
                             String name = USER_FROM.getString("name");
                             String type = reqdObj.getString("type");
-                            RequestOb requestOb = new RequestOb(id, name, type);
+                            String data = reqdObj.getString("data");
+                            RequestOb requestOb = new RequestOb(id, name, type, data);
                             reqList.add(requestOb);
                         }
                         if (callback != null) {
@@ -116,13 +118,16 @@ public class RequestsCore {
 
         }
     }
-    public void AprooveRequests(Integer RID, String type, AprooveCallback callback){
+    public void AprooveRequests(Integer RID, String type, String data_, AprooveCallback callback){
         try {
             JSONObject data = new JSONObject();
             data.put("rid", RID);
             String path;
-            if (Objects.equals(type, "add_friend")){
+            if (Objects.equals(type, "add_friend")) {
                 path = add_friend;
+            }
+            if (Objects.equals(type, "join_friend_in_game")){
+                path = join_fr;
             }else{
                 path = aproove;
             }
@@ -136,11 +141,16 @@ public class RequestsCore {
                             Toast.makeText(context, "Успешно", Toast.LENGTH_SHORT).show();
                             Log.d("Response", "Code: " + jsonResponse.getString("code"));
                             if (callback != null)
-                                callback.onSuccess("Успешно удалено"); // <--- БЕЗ ЭТОЙ СТРОКИ АДАПТЕР НЕ УЗНАЕТ ОБ УСПЕХЕ
-                        }else if (jsonResponse.has("status") && jsonResponse.getString("status").equals("error")) {
+                                callback.onSuccess("Успешно удалено", null); // <--- БЕЗ ЭТОЙ СТРОКИ АДАПТЕР НЕ УЗНАЕТ ОБ УСПЕХЕ
+                        }else if (jsonResponse.has("status") && jsonResponse.getString("status").equals("join_friend_in_game")) {
+                            Toast.makeText(context, "Успешно", Toast.LENGTH_SHORT).show();
+                            Log.d("Response", "Code: " + jsonResponse.getString("code"));
+                            if (callback != null)
+                                callback.onSuccess("Успешно",jsonResponse.getString("lobby_hash")); // <--- БЕЗ ЭТОЙ СТРОКИ АДАПТЕР НЕ УЗНАЕТ ОБ УСПЕХЕ
+                        } else if (jsonResponse.has("status") && jsonResponse.getString("status").equals("error")) {
                             Toast.makeText(context, "Ошибка" + jsonResponse.getString("code"), Toast.LENGTH_SHORT).show();
                             Log.d("Response", "Code: " + jsonResponse.getString("code"));
-                        } else {
+                        }else {
                             Toast.makeText(context, "Ошибка ответа", Toast.LENGTH_SHORT).show();
                             Log.d("Response", "Code: " + jsonResponse.getString("code"));
                         }
@@ -177,7 +187,7 @@ public class RequestsCore {
     }
 
     public interface AprooveCallback {
-        void onSuccess(String message);
+        void onSuccess(String message, String data);
         void onError(String error);
     }
 }

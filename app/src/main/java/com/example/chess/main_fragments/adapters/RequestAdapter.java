@@ -1,6 +1,7 @@
 package com.example.chess.main_fragments.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.chess.Lobby;
 import com.example.chess.R;
 import com.example.chess.main_fragments.core.RequestsCore;
 import com.example.chess.main_fragments.objects.RequestOb;
@@ -43,6 +45,7 @@ public class RequestAdapter  extends RecyclerView.Adapter<RequestAdapter.ViewHol
         holder.typeReq.setText(request.getType());
         int RID = request.getId();
         String type = request.getType();
+        String data = request.getData();
 
         holder.cancelBtnReq.setOnClickListener(v -> {
             requestsCore.CancelRequests(RID, new RequestsCore.CancelCallback() {
@@ -68,9 +71,9 @@ public class RequestAdapter  extends RecyclerView.Adapter<RequestAdapter.ViewHol
             });
         });
         holder.saccessBtnReq.setOnClickListener(v -> {
-            requestsCore.AprooveRequests(RID, type, new RequestsCore.AprooveCallback() {
+            requestsCore.AprooveRequests(RID, type, data, new RequestsCore.AprooveCallback() {
                 @Override
-                public void onSuccess(String message) {
+                public void onSuccess(String message, String data) {
                     // Получаем АКТУАЛЬНУЮ позицию элемента в момент нажатия
                     int currentPos = holder.getBindingAdapterPosition();
 
@@ -81,6 +84,22 @@ public class RequestAdapter  extends RecyclerView.Adapter<RequestAdapter.ViewHol
                         notifyItemRangeChanged(currentPos, requestObs.size());
 
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+                    }
+                    if ("join_friend_in_game".equals(type) && data != null && !data.isEmpty()) {
+                        Intent intent =
+                                new Intent(
+                                        context,
+                                        Lobby.class
+                                );
+
+                        intent.putExtra(
+                                "lobbyId",
+                                data
+                        );
+
+
+
+                        context.startActivity(intent);
                     }
                 }
 

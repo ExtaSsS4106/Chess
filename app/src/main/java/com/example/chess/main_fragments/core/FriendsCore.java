@@ -191,7 +191,7 @@ public class FriendsCore {
         data.put("fuid", friendId);
 
         requests.metaPOST(
-                endpoints.getJOIN_TO_GAME(),
+                endpoints.getINVITE_TO_GAME(),
                 data,
                 new Requests.ApiCallback() {
 

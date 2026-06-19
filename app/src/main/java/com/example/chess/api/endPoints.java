@@ -14,7 +14,8 @@ public class endPoints {
     private String ADD_FRIEND = "/mobile_api/app_functional/friends/add";
     private String DELETE_FRIEND = "/mobile_api/app_functional/friends/delete";
     private String SEND_IVITE = "/mobile_api/app_functional/friends/send_invite";
-    private String JOIN_TO_GAME = "/mobile_api/app_functional/friends/join_to_game";
+    private String INVITE_TO_GAME = "/mobile_api/app_functional/friends/invite_to_game";
+
     //requests
     private String GET_REQUESTS = "/mobile_api/app_functional/requests/get";
     private String CANCEL_REQUEST = "/mobile_api/app_functional/requests/cancel";
@@ -48,7 +49,7 @@ public class endPoints {
     public String getADD_FRIEND(){return this.ADD_FRIEND;}
     public String getDELETE_FRIEND(){return this.DELETE_FRIEND;}
     public String getSEND_IVITE(){return this.SEND_IVITE;}
-    public String getJOIN_TO_GAME(){return this.JOIN_TO_GAME;}
+    public String getINVITE_TO_GAME(){return this.INVITE_TO_GAME;}
     //requests
     public String getGET_REQUESTS(){return this.GET_REQUESTS;}
     public String getCANCEL_REQUEST(){return this.CANCEL_REQUEST;}
