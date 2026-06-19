@@ -84,8 +84,7 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
 
                             @Override
                             public void onSuccess(
-                                    String lobbyHash,
-                                    int requestId
+                                    String lobbyHash
                             ) {
 
                                 Intent intent =

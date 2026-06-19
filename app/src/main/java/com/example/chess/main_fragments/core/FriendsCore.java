@@ -204,8 +204,7 @@ public class FriendsCore {
                                     new JSONObject(response);
 
                             callback.onSuccess(
-                                    json.getString("Lobby_hash"),
-                                    json.getInt("Request_id")
+                                    json.getString("lobby_hash")
                             );
 
                         } catch (JSONException e) {
@@ -225,8 +224,7 @@ public class FriendsCore {
 
     public interface InviteCallback {
         void onSuccess(
-                String lobbyHash,
-                int requestId
+                String lobbyHash
         );
 
         void onError(String error);
