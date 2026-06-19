@@ -321,7 +321,6 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 class PrivateRoom(AsyncWebsocketConsumer):
     
-    was_sendet_start = False
     async def connect(self):
         self.was_sendet_start = False
         self.lobby_id = self.scope['url_route']['kwargs']['lobby_id']
@@ -350,10 +349,24 @@ class PrivateRoom(AsyncWebsocketConsumer):
 
         await self.accept()
 
+        info = await self.get_lobby_info()
+
+
         await self.send(text_data=json.dumps({
             'type': 'connected',
+
             'user_id': self.user.id,
             'username': self.user.username,
+
+            'user_1_id': info['user_1_id'],
+            'user_1_name': info['user_1_name'],
+
+            'user_2_id': info['user_2_id'],
+            'user_2_name': info['user_2_name'],
+
+            'user_1_ready': info['user_1_ready'],
+            'user_2_ready': info['user_2_ready'],
+
             'message': 'Подключение выполнено'
         }))
 
@@ -386,10 +399,11 @@ class PrivateRoom(AsyncWebsocketConsumer):
 
         try:
             lobby = await self.get_lobby()
-
+            room = await self.get_room()
             if not lobby.user_1_in or not lobby.user_2_in:
-                await self.delete_lobby(lobby.room)
+                await self.delete_lobby(room)
                 await self.delete_room_own()
+                await self.delete_req()
                 if self.check_req_task:
                     self.check_req_task.cancel()
 
@@ -431,9 +445,10 @@ class PrivateRoom(AsyncWebsocketConsumer):
         if (
             lobby.user_1_ready
             and lobby.user_2_ready
-            and not self.was_sendet_start
+            and lobby.status != 'playing'
         ):
-            self.was_sendet_start = True
+            await self.set_status_lobby('playing')
+            
             await self.start_game()
 
     def get_token_from_query(self, query_string):
@@ -462,26 +477,38 @@ class PrivateRoom(AsyncWebsocketConsumer):
         }))
         
     async def start_game(self):
+        room = await self.get_room()
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type': 'start',
-                'message': 'Запуск'
+                'message': 'Запуск',
+                'room_id': room.channel_id
             }
         )
+        
+        await self.delete_lobby(room)
 
     async def start(self, event):
         await self.send(text_data=json.dumps({
             'type': 'start',
             'message': event['message'],
+            'room_id': event['room_id'],
         }))
         
     async def notify_ready(self):
+        lobby = await self.get_lobby()
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type': 'ready',
-                'message': f'Игрок {self.user.username} готов'
+                'message': f'Игрок {self.user.username} готов',
+
+                'user_1_id': lobby.user_1_id,
+                'user_2_id': lobby.user_2_id,
+
+                'user_1_ready': lobby.user_1_ready,
+                'user_2_ready': lobby.user_2_ready,
             }
         )
 
@@ -489,14 +516,25 @@ class PrivateRoom(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'type': 'ready',
             'message': event['message'],
+            'user_1_id': event['user_1_id'],
+            'user_2_id': event['user_2_id'],
+            'user_1_ready': event['user_1_ready'],
+            'user_2_ready': event['user_2_ready'],
         }))
 
     async def notify_notready(self):
+        lobby = await self.get_lobby()
         await self.channel_layer.group_send(
             self.room_group_name,
             {
-                'type': 'notready',
-                'message': f'Игрок {self.user.username} не готов'
+                'type': 'ready',
+                'message': f'Игрок {self.user.username} готов',
+
+                'user_1_id': lobby.user_1_id,
+                'user_2_id': lobby.user_2_id,
+
+                'user_1_ready': lobby.user_1_ready,
+                'user_2_ready': lobby.user_2_ready,
             }
         )
 
@@ -504,8 +542,17 @@ class PrivateRoom(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'type': 'notready',
             'message': event['message'],
+            'user_1_id': event['user_1_id'],
+            'user_2_id': event['user_2_id'],
+            'user_1_ready': event['user_1_ready'],
+            'user_2_ready': event['user_2_ready'],
         }))
-
+    
+    
+    @database_sync_to_async
+    def get_room(self):
+        lobby = Lobby.objects.get(hash=self.lobby_id)
+        return lobby.room
     @database_sync_to_async
     def set_user_connected(self):
         lobby = Lobby.objects.get(hash=self.lobby_id)
@@ -560,7 +607,22 @@ class PrivateRoom(AsyncWebsocketConsumer):
             Q(user_1=self.user) | Q(user_2=self.user),
             room=room
         ).delete()
-
+        
+    @database_sync_to_async
+    def authenticate_user(self, token):
+        if not token:
+            print("No token provided")
+            return None
+        try:
+            access_token = AccessToken(token)
+            user_id = access_token['user_id']
+            user = User.objects.get(id=user_id)
+            print(f"User authenticated: {user.username}")
+            return user
+        except Exception as e:
+            print(f"Authentication error: {e}")
+            return None
+        
     @database_sync_to_async
     def rm_user(self):
         try:
@@ -578,6 +640,7 @@ class PrivateRoom(AsyncWebsocketConsumer):
 
         except Lobby.DoesNotExist:
             pass
+        
     
     @database_sync_to_async
     def get_requests(self):
@@ -587,10 +650,44 @@ class PrivateRoom(AsyncWebsocketConsumer):
             return None
         return req
     
+    @database_sync_to_async
+    def delete_req(self):
+        req = Requests.objects.get(data=self.lobby_id)
+        req.delete()
+    
+    @database_sync_to_async
+    def set_status_lobby(self, status):
+        try:
+            lobby = Lobby.objects.get(hash=self.lobby_id)
+            lobby.status = status
+            lobby.save()
+            return True
+        except Lobby.DoesNotExist:
+            return False
+
+    
     def stop_loop_check(self):
         if self.check_req_task:
             self.check_req_task.cancel()
+            
     
+    @database_sync_to_async
+    def get_lobby_info(self):
+        lobby = Lobby.objects.select_related(
+            'user_1',
+            'user_2'
+        ).get(hash=self.lobby_id)
+
+        return {
+            'user_1_id': lobby.user_1.id,
+            'user_1_name': lobby.user_1.username,
+
+            'user_2_id': lobby.user_2.id,
+            'user_2_name': lobby.user_2.username,
+
+            'user_1_ready': lobby.user_1_ready,
+            'user_2_ready': lobby.user_2_ready,
+        }
     async def check_req(self):
         
         while True:

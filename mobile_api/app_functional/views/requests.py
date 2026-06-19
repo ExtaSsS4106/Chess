@@ -22,7 +22,8 @@ class Get_requests(APIView):
                         "id": r.user_from.id,
                         "name": r.user_from.username
                     },
-                    "type": r.type
+                    "type": r.type,
+                    "data": r.data
                 })
         else:
             status_ = 'empty'
@@ -71,5 +72,5 @@ class Aproove_request(APIView):
         req.save()
         
         if req.type == 'join_friend_in_game':
-            return Response({"lobby_hash": req.data},status=status.HTTP_201_CREATED)
+            return Response({"lobby_hash": req.data, "status": "join_friend_in_game", "code": "OK"},status=status.HTTP_201_CREATED)
         return Response(status=status.HTTP_201_CREATED)

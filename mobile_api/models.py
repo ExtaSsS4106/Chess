@@ -34,12 +34,17 @@ class Rooms(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
 class Lobby(models.Model):
+    
+    STATUS_CHOICES = [('created', 'Created'),('playing', 'Playing')]
+    
     id = models.AutoField(primary_key=True)
     hash = models.TextField(unique=True, null=False)
     user_1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lobby_as_user1')
     user_2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lobby_as_user2')
     user_1_in = models.BooleanField(default=False, null=True, blank=True)
     user_2_in = models.BooleanField(default=False, null=True, blank=True)
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES) 
     
     user_1_ready = models.BooleanField(default=False, null=True, blank=True)
     user_2_ready = models.BooleanField(default=False, null=True, blank=True)
