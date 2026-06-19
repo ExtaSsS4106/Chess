@@ -126,7 +126,7 @@ public class RequestsCore {
             if (Objects.equals(type, "add_friend")) {
                 path = add_friend;
             }
-            if (Objects.equals(type, "join_friend_in_game")){
+            else if (Objects.equals(type, "join_friend_in_game")){
                 path = join_fr;
             }else{
                 path = aproove;
