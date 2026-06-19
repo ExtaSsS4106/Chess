@@ -17,7 +17,6 @@ class Session(AsyncWebsocketConsumer):
         self.user = None           # <- инициализируем явно
         self.room_group_name = None  # <- инициализируем явно
         self.channel_id = self.scope['url_route']['kwargs']['channel_id']
-
         token = self.get_token_from_query()
         self.user = await self.authenticate_user(token)
 
@@ -95,8 +94,8 @@ class Session(AsyncWebsocketConsumer):
         else:
             if self.room_is_on():
                 await self.set_room_waiting()
-            
-
+        
+        
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -165,6 +164,20 @@ class Session(AsyncWebsocketConsumer):
             'king_in_check': event.get('king_in_check'),
         }))
 
+    async def give_up(self, event):
+        try:
+            await self.send(text_data=json.dumps({
+                'type': 'give_up',
+                'status': event.get('status'),          
+                'winner': event.get('winner'),              
+                'reason': event.get('reason'),              
+                'white_pieces': event.get('white_pieces'),  
+                'black_pieces': event.get('black_pieces'),  
+            }))
+        except Exception as e:
+            # Соединение уже закрыто
+            print(f"[INFO] Не удалось отправить give_up: {e}")
+
     # === Таймер ожидания соперника ===
 
     async def wait_for_opponent_reconnect(self):
@@ -193,33 +206,52 @@ class Session(AsyncWebsocketConsumer):
         try:
             data = json.loads(text_data)
             message_type = data['type']
-            await self.save_desk(data)
-            analyzer = ChessAnalyzer(data)
-            result = analyzer.analyze()
-            
-            if result['winner']:
-                await self.set_winner(result['winner'])
+            if message_type == 'give_up':
+                self.givedUp = True
+                room = await self.get_room()
+                if room is None:
+                    print(f"[ERROR] Комната не найдена для give_up")
+                    return
+                
+                if room.user_1_id == self.user.id:
+                    await self.set_winner_by_user(room.user_2)
+                elif room.user_2_id == self.user.id:
+                    await self.set_winner_by_user(room.user_1)
+                
                 await self.disable_room()
-            if result['status'] == 'checkmate' \
-                or result['status'] == 'draw' \
-                or result['status'] == 'stalemate':
-                await self.disable_room()
-            
-            await self.set_info(result)
-            if message_type == 'getInfo':
-                await self.send(text_data=json.dumps(
+                info = room.info if room.info else {}
+                
+                await self.channel_layer.group_send(
+                    self.room_group_name,
                     {   
-                        'type': 'info',
-                        'status':result['status'],
-                        'winner':result['winner'],
-                        'reason':result['reason'],
-                        'white_pieces':result['white_pieces'],
-                        'black_pieces':result['black_pieces'],
-                        'is_white_turn':result['is_white_turn'],
-                        'king_in_check': result['king_in_check'],
+                        'type': 'give_up',
+                        'status': 'give_up',
+                        'winner': info.get('winner'),
+                        'reason': f"Игрок {self.user.username} сдался.",
+                        'white_pieces': info.get('white_pieces', 0),
+                        'black_pieces': info.get('black_pieces', 0),
                     }
-                ))
-            elif message_type == 'save':
+                )
+                await asyncio.sleep(2)
+                await self.send(text_data=json.dumps({
+                        'type': 'closing',
+                    }))
+            
+            if message_type == 'save':
+                await self.save_desk(data)
+                analyzer = ChessAnalyzer(data)
+                result = analyzer.analyze()
+                
+                if result['winner']:
+                    await self.set_winner(result['winner'])
+                    await self.disable_room()
+                if result['status'] == 'checkmate' \
+                    or result['status'] == 'draw' \
+                    or result['status'] == 'stalemate':
+                    await self.disable_room()
+                
+                await self.set_info(result)
+                
                 await self.channel_layer.group_send(
                     self.room_group_name,
                     {   
@@ -236,10 +268,10 @@ class Session(AsyncWebsocketConsumer):
                         'sender_id': self.user.id,
                     }
                 )
+                
         except Exception as e:
             print(f"Error: {e}")
     # === Вспомогательные методы ===
-
     def get_token_from_query(self):
         query_string = self.scope['query_string'].decode('utf-8')
         params = parse_qs(query_string)
@@ -255,9 +287,11 @@ class Session(AsyncWebsocketConsumer):
             return None
 
     @database_sync_to_async
-    def get_room(self, channel_id):
+    def get_room(self, channel_id=None):
         try:
-            room = Rooms.objects.get(channel_id=channel_id)
+            if channel_id is None:
+                channel_id = self.channel_id
+            room = Rooms.objects.select_related('user_1', 'user_2').get(channel_id=channel_id)
             if room.user_1_id == self.user.id or room.user_2_id == self.user.id:
                 return room
             return None
@@ -324,6 +358,7 @@ class Session(AsyncWebsocketConsumer):
             return None
     @database_sync_to_async
     def set_winner(self, color):
+        """Установить победителя по цвету (для анализатора ходов)"""
         try:
             room = Rooms.objects.get(channel_id=self.channel_id)
         except Rooms.DoesNotExist:
@@ -334,6 +369,17 @@ class Session(AsyncWebsocketConsumer):
         elif color == "black":
             room.winner = room.user_2
         room.save()
+    
+    @database_sync_to_async
+    def set_winner_by_user(self, user):
+        """Установить победителя по объекту User (для give_up)"""
+        try:
+            room = Rooms.objects.get(channel_id=self.channel_id)
+            room.winner = user
+            room.save()
+            return True
+        except Rooms.DoesNotExist:
+            return False
         
     @database_sync_to_async
     def check_room(self):

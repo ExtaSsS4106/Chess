@@ -42,6 +42,7 @@ class Cancel_request(APIView):
         if Requests.objects.filter(id=rid, user_to=user, status='aprooved').exists():
             return Response(StatusCodes.REQUEST_ALREADY_APPROVED, status=status.HTTP_400_BAD_REQUEST)
         
+        
         req = get_object_or_404(Requests, id=rid, user_to = user)
         req.status = 'canceld'
         req.save()
@@ -68,4 +69,7 @@ class Aproove_request(APIView):
         req = get_object_or_404(Requests, id=rid, user_to = user)
         req.status = 'aprooved'
         req.save()
+        
+        if req.type == 'join_friend_in_game':
+            return Response({"lobby_hash": req.data},status=status.HTTP_201_CREATED)
         return Response(status=status.HTTP_201_CREATED)

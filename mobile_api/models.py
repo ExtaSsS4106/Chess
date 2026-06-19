@@ -33,6 +33,22 @@ class Rooms(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+class Lobby(models.Model):
+    id = models.AutoField(primary_key=True)
+    hash = models.TextField(unique=True, null=False)
+    user_1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lobby_as_user1')
+    user_2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lobby_as_user2')
+    user_1_in = models.BooleanField(default=False, null=True, blank=True)
+    user_2_in = models.BooleanField(default=False, null=True, blank=True)
+    
+    user_1_ready = models.BooleanField(default=False, null=True, blank=True)
+    user_2_ready = models.BooleanField(default=False, null=True, blank=True)
+    
+    room = models.ForeignKey(Rooms, on_delete=models.CASCADE)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
 class Requests(models.Model):
     TYPE_CHOICES = [
         ('add_friend', 'Add_friend'),
@@ -50,6 +66,8 @@ class Requests(models.Model):
     user_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name='requests_as_user_to', null=True, blank=True)
     type = models.CharField(max_length=50, choices=TYPE_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)  
+    
+    data = models.TextField(blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

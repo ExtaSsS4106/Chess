@@ -9,7 +9,7 @@ from rest_framework import permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
-from mobile_api.models import Rooms, Requests, Friends
+from mobile_api.models import Rooms, Requests, Friends, Lobby
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
@@ -294,8 +294,328 @@ class GameConsumer(AsyncWebsocketConsumer):
             if not Rooms.objects.filter(channel_id=channel_id).exists():
                 return channel_id
 
-class PrivateRoom(APIView):
-    permission_classes = (IsAuthenticated,)
 
-    def post(self, request):
-        return None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class PrivateRoom(AsyncWebsocketConsumer):
+    
+    was_sendet_start = False
+    async def connect(self):
+        self.was_sendet_start = False
+        self.lobby_id = self.scope['url_route']['kwargs']['lobby_id']
+
+        query_string = self.scope['query_string'].decode('utf-8')
+        token = self.get_token_from_query(query_string)
+
+        self.user = await self.authenticate_user(token)
+
+        if self.user is None:
+            await self.close()
+            return
+
+        self.user_id = self.user.id
+        self.room_group_name = f"lobby_{self.lobby_id}"
+        self.cleanup_task = None
+
+        await self.set_user_connected()
+
+        lobby = await self.get_lobby()
+
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+
+        await self.accept()
+
+        await self.send(text_data=json.dumps({
+            'type': 'connected',
+            'user_id': self.user.id,
+            'username': self.user.username,
+            'message': 'Подключение выполнено'
+        }))
+
+        if lobby.user_1_id == self.user.id:
+            await self.send(text_data=json.dumps({
+                'type': 'waiting',
+                'message': 'Ожидание соперника...'
+            }))
+
+            if lobby.user_2_in:
+                await self.notify_players()
+
+        elif lobby.user_2_id == self.user.id:
+            await self.send(text_data=json.dumps({
+                'type': 'waiting',
+                'message': 'Ожидание соперника...'
+            }))
+
+            if lobby.user_1_in:
+                await self.notify_players()
+        self.check_req_task = asyncio.create_task(self.check_req())
+    async def disconnect(self, close_code):
+
+        if self.user is None:
+            return
+
+        print(f"Игрок {self.user.username} отключился. Код: {close_code}")
+
+        await self.rm_user()
+
+        try:
+            lobby = await self.get_lobby()
+
+            if not lobby.user_1_in or not lobby.user_2_in:
+                await self.delete_lobby(lobby.room)
+                await self.delete_room_own()
+                if self.check_req_task:
+                    self.check_req_task.cancel()
+
+        except Lobby.DoesNotExist:
+            pass
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'opponent_disconnected',
+                'user_id': self.user.id,
+                'username': self.user.username,
+            }
+        )
+
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
+
+    async def receive(self, text_data=None, bytes_data=None):
+
+        if text_data is None:
+            return
+
+        data = json.loads(text_data)
+        message_type = data.get('type')
+
+        if message_type == 'ready':
+            await self.set_ready()
+            await self.notify_ready()
+
+        elif message_type == 'not_ready':
+            await self.set_not_ready()
+            await self.notify_notready()
+            self.was_sendet_start = False
+            
+        lobby = await self.get_lobby()
+        if (
+            lobby.user_1_ready
+            and lobby.user_2_ready
+            and not self.was_sendet_start
+        ):
+            self.was_sendet_start = True
+            await self.start_game()
+
+    def get_token_from_query(self, query_string):
+        params = {}
+
+        for param in query_string.split('&'):
+            if '=' in param:
+                key, value = param.split('=')
+                params[key] = value
+
+        return params.get('token', '')
+
+    async def notify_players(self):
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'notify',
+                'message': 'Соперник подключился!'
+            }
+        )
+
+    async def notify(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'notify',
+            'message': event['message'],
+        }))
+        
+    async def start_game(self):
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'start',
+                'message': 'Запуск'
+            }
+        )
+
+    async def start(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'start',
+            'message': event['message'],
+        }))
+        
+    async def notify_ready(self):
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'ready',
+                'message': f'Игрок {self.user.username} готов'
+            }
+        )
+
+    async def ready(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'ready',
+            'message': event['message'],
+        }))
+
+    async def notify_notready(self):
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'notready',
+                'message': f'Игрок {self.user.username} не готов'
+            }
+        )
+
+    async def notready(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'notready',
+            'message': event['message'],
+        }))
+
+    @database_sync_to_async
+    def set_user_connected(self):
+        lobby = Lobby.objects.get(hash=self.lobby_id)
+
+        if lobby.user_1_id == self.user.id:
+            lobby.user_1_in = True
+
+        elif lobby.user_2_id == self.user.id:
+            lobby.user_2_in = True
+
+        lobby.save()
+
+    @database_sync_to_async
+    def get_lobby(self):
+        return Lobby.objects.get(hash=self.lobby_id)
+
+    @database_sync_to_async
+    def set_ready(self):
+        lobby = Lobby.objects.get(hash=self.lobby_id)
+
+        if lobby.user_1_id == self.user.id:
+            lobby.user_1_ready = True
+
+        elif lobby.user_2_id == self.user.id:
+            lobby.user_2_ready = True
+
+        lobby.save()
+
+    @database_sync_to_async
+    def set_not_ready(self):
+        lobby = Lobby.objects.get(hash=self.lobby_id)
+
+        if lobby.user_1_id == self.user.id:
+            lobby.user_1_ready = False
+
+        elif lobby.user_2_id == self.user.id:
+            lobby.user_2_ready = False
+
+        lobby.save()
+
+    @database_sync_to_async
+    def delete_room_own(self):
+        Rooms.objects.filter(
+            Q(user_1=self.user) | Q(user_2=self.user),
+            type='private',
+            status='created'
+        ).delete()
+
+    @database_sync_to_async
+    def delete_lobby(self, room):
+        Lobby.objects.filter(
+            Q(user_1=self.user) | Q(user_2=self.user),
+            room=room
+        ).delete()
+
+    @database_sync_to_async
+    def rm_user(self):
+        try:
+            lobby = Lobby.objects.get(hash=self.lobby_id)
+
+            if lobby.user_1_id == self.user.id:
+                lobby.user_1_in = False
+                lobby.user_1_ready = False
+                lobby.save(update_fields=['user_1_in', 'user_1_ready'])
+
+            elif lobby.user_2_id == self.user.id:
+                lobby.user_2_in = False
+                lobby.user_2_ready = False
+                lobby.save(update_fields=['user_2_in', 'user_2_ready'])
+
+        except Lobby.DoesNotExist:
+            pass
+    
+    @database_sync_to_async
+    def get_requests(self):
+        try:
+            req = Requests.objects.get(data=self.lobby_id)
+        except Requests.DoesNotExist:
+            return None
+        return req
+    
+    def stop_loop_check(self):
+        if self.check_req_task:
+            self.check_req_task.cancel()
+    
+    async def check_req(self):
+        
+        while True:
+            req = await self.get_requests()
+            if not req:
+                await self.send(text_data=json.dumps({
+                    'type': 'request_dose_note_exists',
+                    'message': f'Не удалось найти запрос'
+                }))
+                self.stop_loop_check()
+                return
+            if req.status == "aprooved":
+                await self.send(text_data=json.dumps({
+                    'type': 'friend_accepted_req',
+                    'message': f'Друг принял приглашение'
+                }))
+                self.stop_loop_check()
+                return
+            if req.status == "canceld":
+                await self.send(text_data=json.dumps({
+                    'type': 'friend_canceld_req',
+                    'message': f'Друг отклонил приглашение'
+                }))
+                self.stop_loop_check()
+                return
+            await asyncio.sleep(1)
+        
+    

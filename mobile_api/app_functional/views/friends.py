@@ -4,8 +4,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
-from mobile_api.models import Friends, Requests
+from mobile_api.models import Friends, Requests, Rooms, Lobby
 from django.db.models import Q
+import uuid
 
 from mobile_api.app_functional.status_codes import StatusCodes
 # Create your views here.
@@ -106,3 +107,49 @@ class send_invite_to_friend(APIView):
         )
         
         return Response(StatusCodes.INVITE_SENT, status=status.HTTP_201_CREATED)
+    
+class join_to_game(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    def post(self, request):
+        user = request.user
+        fuid = request.data.get('fuid')
+        
+        friend = User.objects.get(id=fuid)
+        room = self.create_room(friend, user.id)
+        Lobby_hash = self.generate_hash()
+        Lobby.objects.create(
+            hash=Lobby_hash,
+            user_1 = user,
+            user_2 = friend,
+            room=room,
+        )
+        req = Requests.objects.create(
+            user_from = user,
+            user_to = friend,
+            type = 'join_friend_in_game',
+            status = 'sended',
+            data = Lobby_hash
+        )
+        return Response({ "Lobby_hash": Lobby_hash , "Request_id": req.id}, status=status.HTTP_200_OK)
+    def generate_hash(self):
+        while True:
+            Lobby_hash = str(uuid.uuid4())[:25]
+            if not Lobby.objects.filter(hash=Lobby_hash).exists():
+                return Lobby_hash
+            
+    def create_room(self, fr, uid):
+        try:
+            channel_id = self.generate_unique_channel_id()
+            user = User.objects.get(id=uid)
+            room = Rooms.objects.create(type='private', status='created', user_1=user, user_2=fr, channel_id=channel_id)
+            print(f"[DEBUG] Created room {room.id} for user {user.username}")
+            return room
+        except Exception as e:
+            print(f"Error in create_room: {e}")
+            return None
+    
+    def generate_unique_channel_id(self):
+        while True:
+            channel_id = str(uuid.uuid4())[:25]  # Генерируем ID
+            if not Rooms.objects.filter(channel_id=channel_id).exists():
+                return channel_id
