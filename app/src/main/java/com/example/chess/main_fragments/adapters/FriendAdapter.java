@@ -1,9 +1,11 @@
 package com.example.chess.main_fragments.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -11,6 +13,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.chess.Lobby;
 import com.example.chess.R;
 import com.example.chess.main_fragments.core.FriendsCore;
 import com.example.chess.main_fragments.objects.Friend;
@@ -70,6 +73,56 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
                 e.printStackTrace();
             }
         });
+
+        holder.inviteBtn.setOnClickListener(v -> {
+
+            try {
+
+                friendsCore.inviteToGame(
+                        friendId,
+                        new FriendsCore.InviteCallback() {
+
+                            @Override
+                            public void onSuccess(
+                                    String lobbyHash,
+                                    int requestId
+                            ) {
+
+                                Intent intent =
+                                        new Intent(
+                                                context,
+                                                Lobby.class
+                                        );
+
+                                intent.putExtra(
+                                        "lobbyId",
+                                        lobbyHash
+                                );
+
+                                intent.putExtra(
+                                        "requestId",
+                                        requestId
+                                );
+
+                                context.startActivity(intent);
+                            }
+
+                            @Override
+                            public void onError(String error) {
+
+                                Toast.makeText(
+                                        context,
+                                        error,
+                                        Toast.LENGTH_LONG
+                                ).show();
+                            }
+                        }
+                );
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     @Override
@@ -78,13 +131,24 @@ public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.ViewHolder
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
+
         TextView friendName;
+
         ImageButton deleteBtn;
+
+        Button inviteBtn;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            friendName = itemView.findViewById(R.id.friendName);
-            deleteBtn = itemView.findViewById(R.id.deleteFriendBtn);
+
+            friendName =
+                    itemView.findViewById(R.id.friendName);
+
+            deleteBtn =
+                    itemView.findViewById(R.id.deleteFriendBtn);
+
+            inviteBtn =
+                    itemView.findViewById(R.id.frJoinBTN);
         }
     }
 }

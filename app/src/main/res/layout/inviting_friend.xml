@@ -1,64 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.motion.widget.MotionLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.motion.widget.MotionLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#2A2A2A"
-    app:layoutDescription="@xml/registr_scene"
-    tools:context=".MainActivity"
-    tools:layout_editor_absoluteX="-28dp"
-    tools:layout_editor_absoluteY="-652dp">
+    android:background="#2A2A2A">
 
     <TextView
-        android:id="@+id/label_if"
+        android:id="@+id/tvLobbyTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:text="Invite friend"
+        android:text="Private Lobby"
+        android:textSize="22sp"
+        android:textStyle="bold"
         android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.045"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <View
-        android:id="@+id/divider2"
+        android:id="@+id/divider"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:layout_marginTop="12dp"
-        android:background="?android:attr/listDivider"
-        android:backgroundTint="#E2E2E2"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/label_if" />
-
-    <!-- Список друзей для приглашения -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewInviteFriends"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:background="#666666"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
-        android:scrollbars="vertical"
-        app:layout_constraintTop_toBottomOf="@+id/divider2"
-        app:layout_constraintBottom_toTopOf="@+id/btn_switch_to_register"
+        app:layout_constraintTop_toBottomOf="@id/tvLobbyTitle"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
-    <Button
-        android:id="@+id/btn_back_fi"
+    <!-- Игрок -->
+    <TextView
+        android:id="@+id/tvMyName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="#595757"
-        android:text="назад"
+        android:text="Player1"
         android:textColor="#FFFFFF"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:textSize="18sp"
+        android:layout_marginTop="32dp"
+        android:layout_marginStart="24dp"
+        app:layout_constraintTop_toBottomOf="@id/divider"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <TextView
+        android:id="@+id/tvMyReady"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ГОТОВ"
+        android:textColor="#4CAF50"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:layout_marginEnd="24dp"
+        app:layout_constraintTop_toTopOf="@id/tvMyName"
+        app:layout_constraintBottom_toBottomOf="@id/tvMyName"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Соперник -->
+    <TextView
+        android:id="@+id/tvEnemyName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Player2"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:layout_marginTop="40dp"
+        android:layout_marginStart="24dp"
+        app:layout_constraintTop_toBottomOf="@id/tvMyName"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <TextView
+        android:id="@+id/tvEnemyReady"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="НЕ ГОТОВ"
+        android:textColor="#F44336"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:layout_marginEnd="24dp"
+        app:layout_constraintTop_toTopOf="@id/tvEnemyName"
+        app:layout_constraintBottom_toBottomOf="@id/tvEnemyName"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <Button
+        android:id="@+id/LobtnReady"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="40dp"
+        android:backgroundTint="#4CAF50"
+        android:text="ГОТОВ"
+        android:textColor="#FFFFFF"
+        app:layout_constraintBottom_toTopOf="@id/LobtnExit"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.095"
+        app:layout_constraintHorizontal_bias="0.502"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/LobtnExit"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:text="ВЫЙТИ"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#D32F2F"
+        android:layout_marginBottom="32dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.motion.widget.MotionLayout>

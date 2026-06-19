@@ -180,7 +180,57 @@ public class FriendsCore {
         });
     }
 
+    public void inviteToGame(
+            int friendId,
+            InviteCallback callback
+    ) throws JSONException {
 
+        Requests requests = new Requests(context);
+
+        JSONObject data = new JSONObject();
+        data.put("fuid", friendId);
+
+        requests.metaPOST(
+                endpoints.getJOIN_TO_GAME(),
+                data,
+                new Requests.ApiCallback() {
+
+                    @Override
+                    public void onSuccess(String response) {
+
+                        try {
+
+                            JSONObject json =
+                                    new JSONObject(response);
+
+                            callback.onSuccess(
+                                    json.getString("Lobby_hash"),
+                                    json.getInt("Request_id")
+                            );
+
+                        } catch (JSONException e) {
+                            callback.onError(
+                                    e.getMessage()
+                            );
+                        }
+                    }
+
+                    @Override
+                    public void onError(String error) {
+                        callback.onError(error);
+                    }
+                }
+        );
+    }
+
+    public interface InviteCallback {
+        void onSuccess(
+                String lobbyHash,
+                int requestId
+        );
+
+        void onError(String error);
+    }
 
 
     // Callback интерфейсы

@@ -14,6 +14,7 @@ public class endPoints {
     private String ADD_FRIEND = "/mobile_api/app_functional/friends/add";
     private String DELETE_FRIEND = "/mobile_api/app_functional/friends/delete";
     private String SEND_IVITE = "/mobile_api/app_functional/friends/send_invite";
+    private String JOIN_TO_GAME = "/mobile_api/app_functional/friends/join_to_game";
     //requests
     private String GET_REQUESTS = "/mobile_api/app_functional/requests/get";
     private String CANCEL_REQUEST = "/mobile_api/app_functional/requests/cancel";
@@ -21,6 +22,7 @@ public class endPoints {
     //search game
     private String SEARCH_ROOM = "/mobile_api/search/game_start/";
     private String GAME_SESSION = "/mobile_api/session/";
+    private String LOBBY = "/mobile_api/lobby/";
     private String ACTIVE_GAME = "/mobile_api/app_functional/active_game";
 
     private String PING_PONG = "/mobile_api/app_functional/ping";
@@ -46,6 +48,7 @@ public class endPoints {
     public String getADD_FRIEND(){return this.ADD_FRIEND;}
     public String getDELETE_FRIEND(){return this.DELETE_FRIEND;}
     public String getSEND_IVITE(){return this.SEND_IVITE;}
+    public String getJOIN_TO_GAME(){return this.JOIN_TO_GAME;}
     //requests
     public String getGET_REQUESTS(){return this.GET_REQUESTS;}
     public String getCANCEL_REQUEST(){return this.CANCEL_REQUEST;}
@@ -53,4 +56,5 @@ public class endPoints {
     public String getSEARCH_ROOM(){return this.SEARCH_ROOM;}
     public String getGAME_SESSION(){return this.GAME_SESSION;}
     public String getACTIVE_GAME(){return this.ACTIVE_GAME;}
+    public String getLOBBY(){return this.LOBBY;}
 }
