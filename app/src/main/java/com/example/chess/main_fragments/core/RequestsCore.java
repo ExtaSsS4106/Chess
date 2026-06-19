@@ -77,6 +77,7 @@ public class RequestsCore {
 
         }
     }
+
     public void CancelRequests(Integer RID, CancelCallback callback){
         try {
             JSONObject data = new JSONObject();
