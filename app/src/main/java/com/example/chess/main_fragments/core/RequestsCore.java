@@ -20,7 +20,6 @@ public class RequestsCore {
     private String cancel;
     private String aproove;
     private String add_friend;
-    private String join_fr;
     private Requests requests;
     private Context context;
     private endPoints endPoints;
@@ -118,16 +117,14 @@ public class RequestsCore {
 
         }
     }
-    public void AprooveRequests(Integer RID, String type, String data_, AprooveCallback callback){
+    public void AprooveRequests(Integer RID, String type, AprooveCallback callback){
         try {
             JSONObject data = new JSONObject();
             data.put("rid", RID);
             String path;
             if (Objects.equals(type, "add_friend")) {
                 path = add_friend;
-            }
-            else if (Objects.equals(type, "join_friend_in_game")){
-                path = join_fr;
+
             }else{
                 path = aproove;
             }

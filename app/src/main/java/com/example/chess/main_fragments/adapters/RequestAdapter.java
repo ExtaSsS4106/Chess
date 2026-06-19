@@ -71,7 +71,7 @@ public class RequestAdapter  extends RecyclerView.Adapter<RequestAdapter.ViewHol
             });
         });
         holder.saccessBtnReq.setOnClickListener(v -> {
-            requestsCore.AprooveRequests(RID, type, data, new RequestsCore.AprooveCallback() {
+            requestsCore.AprooveRequests(RID, type, new RequestsCore.AprooveCallback() {
                 @Override
                 public void onSuccess(String message, String data) {
                     // Получаем АКТУАЛЬНУЮ позицию элемента в момент нажатия
