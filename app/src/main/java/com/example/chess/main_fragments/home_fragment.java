@@ -10,6 +10,7 @@ import android.widget.Button;
 
 import com.example.chess.GameActivity;
 import com.example.chess.Loading;
+import com.example.chess.SettingsActivity;
 import com.example.chess.authorisation.LoginActivity;
 
 import androidx.fragment.app.Fragment;
@@ -19,7 +20,7 @@ import com.example.chess.authorisation.core.Login;
 public class home_fragment extends Fragment {
 
     private Button startB;
-    private Button startWFB;
+    private Button settings;
     private Button logOut;
     private Login login;
     @Override
@@ -27,7 +28,7 @@ public class home_fragment extends Fragment {
         View view = inflater.inflate(R.layout.home, container, false);
 
         startB = view.findViewById(R.id.start_home);
-        startWFB = view.findViewById(R.id.start2_home);
+        settings = view.findViewById(R.id.start2_home);
         logOut = view.findViewById(R.id.logout_home);
 
         login = new Login(requireContext());
@@ -40,10 +41,11 @@ public class home_fragment extends Fragment {
             }
         });
 
-        startWFB.setOnClickListener(new View.OnClickListener() {
+        settings.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                Intent intent = new Intent(getActivity(), SettingsActivity.class);
+                startActivity(intent);
             }
         });
 
