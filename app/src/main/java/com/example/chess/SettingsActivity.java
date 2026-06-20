@@ -85,9 +85,9 @@ public class SettingsActivity extends AppCompatActivity {
             return;
         }
 
-        // Валидация: проверяем, что URL начинается с http:// или https://
-        if (serverUrl.startsWith("http://") && serverUrl.startsWith("https://")) {
-            Toast.makeText(this, "Адрес не должен начинаться с http:// или https://", Toast.LENGTH_SHORT).show();
+        // Валидация: проверяем, что URL не начинается с http:// или https://
+        if (serverUrl.startsWith("http://") || serverUrl.startsWith("https://")) {
+            Toast.makeText(this, "Введите только IP адрес (без http://)", Toast.LENGTH_SHORT).show();
             return;
         }
 

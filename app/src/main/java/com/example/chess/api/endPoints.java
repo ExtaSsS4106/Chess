@@ -8,8 +8,7 @@ public class endPoints {
 
     private String PORT = "8000";
     private String IP = "192.168.31.229";
-    private String URL = "http://"+this.IP+":"+this.PORT;
-    private String WS_URL = "ws://"+this.IP+":"+this.PORT;
+
     //authorisation
     private String LOGIN = "/mobile_api/app_functional/login";
     private String REGISTER = "/mobile_api/app_functional/register";
@@ -34,21 +33,45 @@ public class endPoints {
     private String REFRESH = "/mobile_api/app_functional/token/refresh/";
 
     private loadConf loadconf;
-    public endPoints(Context context){
+
+    public endPoints(Context context) {
         this.loadconf = new loadConf();
-        this.IP = loadconf.loadUrl(context);
+        String savedIp = loadconf.loadUrl(context);
+        if (savedIp != null && !savedIp.isEmpty()) {
+            this.IP = savedIp;
+        }
     }
+
     //url
-    public void setPORT(String port){
+    public void setPORT(String port) {
         this.PORT = port;
     }
-    public void setIP(String ip){
+
+    public void setIP(String ip) {
         this.IP = ip;
     }
-    public String getREFRESH(){return REFRESH;}
-    public String getPING_PONG(){return PING_PONG;}
-    public String getURL(){return this.URL;}
-    public String getWS_URL(){return this.WS_URL;}
+
+    public String getREFRESH() {
+        return REFRESH;
+    }
+
+    public String getPING_PONG() {
+        return PING_PONG;
+    }
+
+    public String getURL() {
+        if (this.IP.contains(":")) {
+            return "http://" + this.IP;
+        }
+        return "http://" + this.IP + ":" + this.PORT;
+    }
+
+    public String getWS_URL() {
+        if (this.IP.contains(":")) {
+            return "ws://" + this.IP;
+        }
+        return "ws://" + this.IP + ":" + this.PORT;
+    }
     //authorisation
     public String getLOGINPath(){return this.LOGIN;}
     public String getREGISTERPath(){return this.REGISTER;}

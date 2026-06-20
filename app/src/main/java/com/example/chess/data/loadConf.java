@@ -1,11 +1,11 @@
 package com.example.chess.data;
 
 import android.content.Context;
-
 import org.json.JSONObject;
-
+import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStreamReader;
 
 public class loadConf {
     private static final String FILE = "conf.json";
@@ -14,26 +14,25 @@ public class loadConf {
         return FILE;
     }
 
-
     public String loadUrl(Context context) {
         try {
             FileInputStream fis = context.openFileInput(FILE);
-            byte[] buffer = new byte[fis.available()];
-            fis.read(buffer);
+            InputStreamReader isr = new InputStreamReader(fis);
+            BufferedReader br = new BufferedReader(isr);
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
             fis.close();
 
-            String jsonStr = new String(buffer);
-            JSONObject json = new JSONObject(jsonStr);
-
-            return json.optString("url");
+            JSONObject json = new JSONObject(sb.toString());
+            return json.optString("url", "192.168.31.229");
 
         } catch (Exception e) {
-            e.printStackTrace();
             return "192.168.31.229";
         }
-
     }
-
 
     public boolean saveUrl(Context context, String url) {
         try {
@@ -50,7 +49,6 @@ public class loadConf {
             return false;
         }
     }
-
 
     public boolean confFileExists(Context context) {
         try {
