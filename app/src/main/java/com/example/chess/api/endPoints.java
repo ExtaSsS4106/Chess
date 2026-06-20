@@ -1,5 +1,9 @@
 package com.example.chess.api;
 
+import android.content.Context;
+
+import com.example.chess.data.loadConf;
+
 public class endPoints {
 
     private String PORT = "8000";
@@ -29,7 +33,11 @@ public class endPoints {
     private String PING_PONG = "/mobile_api/app_functional/ping";
     private String REFRESH = "/mobile_api/app_functional/token/refresh/";
 
-
+    private loadConf loadconf;
+    public endPoints(Context context){
+        this.loadconf = new loadConf();
+        this.IP = loadconf.loadUrl(context);
+    }
     //url
     public void setPORT(String port){
         this.PORT = port;

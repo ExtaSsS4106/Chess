@@ -27,7 +27,7 @@ public class FriendsCore {
     public FriendsCore(Context context) {
         this.context = context;
         this.requests = new Requests(context);
-        this.endpoints = new endPoints();
+        this.endpoints = new endPoints(context);
 
         this.get = endpoints.getGET_FRIENDS();
         this.add = endpoints.getADD_FRIEND();

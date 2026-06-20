@@ -45,7 +45,7 @@ public class Loading extends AppCompatActivity {
         });
         setContentView(R.layout.loading);
 
-        endpoints = new endPoints();
+        endpoints = new endPoints(this);
         client = new OkHttpClient();
 
         labelL = findViewById(R.id.label_l);

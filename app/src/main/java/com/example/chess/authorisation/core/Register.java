@@ -18,7 +18,7 @@ public class Register {
     public Register(Context context) {
         this.context = context;
         this.requests = new Requests(context);
-        this.endpoints = new endPoints();
+        this.endpoints = new endPoints(context);
         this.path = endpoints.getREGISTERPath();
     }
 

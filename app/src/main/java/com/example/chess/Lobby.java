@@ -48,7 +48,7 @@ public class Lobby extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.inviting_friend);
 
-        endpoints = new endPoints();
+        endpoints = new endPoints(this);
         client = new OkHttpClient();
 
         lobbyId = getIntent().getStringExtra("lobbyId");

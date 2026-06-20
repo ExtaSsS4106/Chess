@@ -116,7 +116,7 @@ public class GameActivity extends AppCompatActivity {
         loadUser.UserData userData = loadUser.loadUserData(this);
         String token = (userData != null) ? userData.getToken() : "";
 
-        endPoints endpoints = new endPoints();
+        endPoints endpoints = new endPoints(this);
         String url = endpoints.getWS_URL() + endpoints.getGAME_SESSION() + roomId + "/?token=" + token;
 
         Request request = new Request.Builder().url(url).build();

@@ -24,7 +24,7 @@ public class RequestsCore {
     private Context context;
     private endPoints endPoints;
     public RequestsCore(Context context){
-        this.endPoints = new endPoints();
+        this.endPoints = new endPoints(context);
         this.requests = new Requests(context);
         this.context = context;
 

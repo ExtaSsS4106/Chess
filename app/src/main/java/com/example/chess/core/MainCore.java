@@ -22,7 +22,7 @@ public class MainCore {
     public MainCore(Context context) {
         this.context = context;
         this.requests = new Requests(context);
-        this.endpoints = new endPoints();
+        this.endpoints = new endPoints(context);
 
         this.get = endpoints.getACTIVE_GAME();
 

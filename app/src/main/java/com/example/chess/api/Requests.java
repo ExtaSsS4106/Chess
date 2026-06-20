@@ -33,7 +33,7 @@ public class Requests {
     private Context context;
     public Requests(Context context) {
         this.context = context;
-        this.endpoints = new endPoints();
+        this.endpoints = new endPoints(context);
         this.URL = this.endpoints.getURL();
         this.PING_PONG = this.endpoints.getPING_PONG();
         this.REFRESH = this.endpoints.getREFRESH();
